@@ -7,31 +7,83 @@ const item = {
 };
 
 // TODO
-// 1. Prebaci u IDE i testiraj nad odredjenim input-om i vidi kako izgleda output
-// Reorder-uj redosled kojim se izvrsavaju stvari u skripti
+// 1. Reorder-uj redosled kojim se izvrsavaju stvari u skripti
 // 2. ul - bullet points
 // 3. ol - numbered points
 // 4. tekst markiran drugom bojom se ne detektuje
 function main() {
-  // 1. Get the raw HTML
   let html = item.json.data || "";
 
-  // --- EXTRACT TITLE EARLY ---
-  // Grab the title before we alter the HTML
-  const titleMatch = html.match(/<title>(.*?)<\/title>/i);
-  let noteTitle = titleMatch ? titleMatch[1].trim() : "Untitled Note";
-  // Sanitize the title for file names
-  noteTitle = noteTitle.replace(/[\\/:"*?<>|]/g, "-");
-  noteTitle = noteTitle.replace(/[\s]/g, "_");
-  item.json.noteTitle = noteTitle;
+  extractTitle(html);
 
   // --- DESTROY THE HEAD SECTION ---
   // This completely deletes <head>, <title>, and <meta> tags so their text doesn't leak into your note
   html = html.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, "");
 
-  // --- SORT OUTLINE CONTAINERS BY VISUAL ORDER (Top-to-Bottom) ---
-  // OneNote returns text boxes in creation order. This intercepts them,
-  // reads their absolute X/Y coordinates, and sorts them visually!
+  html = orderOutlineContaiers(html);
+
+  // --- FLATTENS HTML ---
+  // This completely flattens the HTML so the only line breaks will be the ones we manually add
+  html = html.replace(/[\r\n]+/g, " ");
+
+  html = defineCallouts(html);
+
+  html = processImages(html);
+
+  html = courierFontHandler(html);
+
+  html = linksHandler(html);
+
+  html = italicFontHandler(html);
+
+  html = highlightedTextHandler(html);
+
+  html = emptyLinesHandler(html);
+
+  // Strip all remaining HTML tags (like <span>, <table>, <b>)
+  let cleanText = html.replace(/<[^>]*>?/gm, "");
+
+  // Decode standard HTML entities so characters render correctly
+  cleanText = cleanText
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"');
+
+  cleanText = whitespaceRemoval(cleanText);
+
+  // Find any multiple line breaks (\n) that happen right before a header (# )
+  // and force them to collapse into a single line break so the header snaps to the text above it.
+  cleanText = cleanText.replace(/\n+(?=# )/g, "\n");
+
+  cleanText = headersHandler(cleanText);
+
+  // --- REMOVE REDUNDANT "GENERAL" TITLE ---
+  // If the very first thing in the text is the "# General" header, delete it
+  // and any empty lines immediately following it.
+  cleanText = cleanText.replace(/^\s*# General\n*/i, "");
+
+  // --- SAVE ---
+  // Save the final text back to the n8n item
+  item.json.extractedText = cleanText;
+
+  // TODO REMOVE BEFORE PASTING TO n8n. slvu
+  return item;
+}
+
+function extractTitle(html) {
+  const titleMatch = html.match(/<title>(.*?)<\/title>/i);
+  let noteTitle = titleMatch ? titleMatch[1].trim() : "Untitled Note";
+
+  // Sanitize the title for file names
+  noteTitle = noteTitle.replace(/[\\/:"*?<>|]/g, "-");
+  noteTitle = noteTitle.replace(/[\s]/g, "_");
+
+  item.json.noteTitle = noteTitle;
+}
+
+function orderOutlineContaiers(html) {
   let bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
   if (bodyMatch) {
     let bodyInnerHtml = bodyMatch[1];
@@ -39,6 +91,7 @@ function main() {
     let containers = bodyInnerHtml.split(
       /(?=<div[^>]*style="[^"]*position:\s*absolute[^"]*")/i,
     );
+
     let sortedContainers = containers
       .map((chunk) => {
         // Extract the top (Y) and left (X) pixel coordinates
@@ -60,14 +113,12 @@ function main() {
     let sortedBody = sortedContainers.map((c) => c.html).join("\n");
     html = html.replace(bodyInnerHtml, sortedBody);
   }
+  return html;
+}
 
-  // --- FLATTENS HTML ---
-  // This completely flattens the HTML so the only line breaks will be the ones we manually add
-  html = html.replace(/[\r\n]+/g, " ");
+function defineCallouts(html) {
+  // Replace OneNote tags with Obsidian Callouts and remove their <p> tags completely.
 
-  // --- INTRODUCE CALLOUTS ---
-  // Replace OneNote tags with Obsidian Callouts and remove their <p> tags completely
-  // The ([\s\S]*?) captures whatever text is inside the paragraph and saves it as $1
   html = html.replace(
     /<p[^>]*data-tag="important"[^>]*>([\s\S]*?)<\/p>/gi,
     "> [!note]\n> $1\n\n",
@@ -80,17 +131,21 @@ function main() {
     /<p[^>]*data-tag="idea"[^>]*>([\s\S]*?)<\/p>/gi,
     "> [!tip]\n> $1\n\n",
   );
+  return html;
+}
 
-  // --- IMAGE PROCESSING ---
+function processImages(html) {
   // Extract Images, generate Obsidian links, and save URLs for downloading
   item.json.imagesToDownload = [];
+
   // Safely capture the entire <img> tag even if attributes span multiple lines
   html = html.replace(/<img\b(?:[^>"]|"[^"]*")*>/gi, (match) => {
     // Extract ONLY the src URL
     let srcMatch = match.match(/src="([^"]+)"/i);
     let src = srcMatch ? srcMatch[1] : "";
 
-    if (!src) return match; // Skip if there is no URL
+    // Skip if there is no URL
+    if (!src) return match;
 
     // Extract the image width
     let widthMatch = match.match(/width="([^"]+)"/i);
@@ -121,10 +176,12 @@ function main() {
     return `![[${fileName}${finalWidth}]]\n`;
   });
 
-  // --- COURIER NEW FONT HANDLER ---
-  // Extract Courier New text and convert it to Obsidian inline code
-  // This looks for any span where the style contains "font-family:Courier New" (with or without quotes/spaces)
+  return html;
+}
+
+function courierFontHandler(html) {
   html = html.replace(
+    // This looks for any span where the style contains "font-family:Courier New" (with or without quotes/spaces)
     /<span[^>]*style="[^"]*font-family:\s*'?Courier New'?[^"]*"[^>]*>([\s\S]*?)<\/span>/gi,
     (match, text) => {
       // Clean up any weird invisible line breaks OneNote might have forced inside the span
@@ -135,8 +192,10 @@ function main() {
     },
   );
 
-  // --- LINIS HANDLER ---
-  // Extract Links and handle embedded styles
+  return html;
+}
+
+function linksHandler(html) {
   html = html.replace(
     /<a\b([^>]*)>([\s\S]*?)<\/a>/gi,
     (match, attributes, text) => {
@@ -164,26 +223,31 @@ function main() {
     },
   );
 
-  // --- ITALIC FONT HANDLER ---
-  // Extract italic spans (Use temporary <i> tags)
+  return html;
+}
+
+function italicFontHandler(html) {
   html = html.replace(
     /<span[^>]*style="[^"]*font-style:\s*italic[^"]*"[^>]*>([\s\S]*?)<\/span>/gi,
     (match, text) => {
       let cleanItalic = text.replace(/\n/g, " ");
 
+      // Use temporary <i> tags
       return `<i>${cleanItalic}</i>`;
     },
   );
-  // Merge touching formatting and convert to final Markdown
-  // This melts touching tags together (e.g., </i><i> becomes nothing, joining the text)
+
+  // Merge touching tags together (e.g., </i><i> becomes nothing, joining the text)
   html = html.replace(/<\/i>\s*<i>/gi, "");
   // Now safely convert the clean blocks to Markdown asterisks!
   html = html.replace(/<i>([\s\S]*?)<\/i>/gi, "*$1*");
 
-  // --- HIGHLIGHTED TEXT HANDLER ---
-  // Extract text highlights and convert them to Obsidian format
-  // This looks for any span that has a background or background-color defined
+  return html;
+}
+
+function highlightedTextHandler(html) {
   html = html.replace(
+    // This looks for any span that has a background or background-color defined
     /<span[^>]*style="[^"]*(?:background-color|background):\s*([^;"]+)[^"]*"[^>]*>([\s\S]*?)<\/span>/gi,
     (match, color, text) => {
       // Clean up the extracted color string just in case OneNote added extra spaces
@@ -192,6 +256,7 @@ function main() {
       if (color === "lime" || color === "#00ff00") {
         return `==${text}==`;
       }
+
       // For any other color, use the HTML <mark> tag to preserve the exact OneNote shade
       else {
         return `<mark style="background: ${color};">${text}</mark>`;
@@ -199,46 +264,41 @@ function main() {
     },
   );
 
-  // --- EMPTY LINE HANDLER ---
+  return html;
+}
+
+function emptyLinesHandler(html) {
   // Destroy rogue <br> tags that OneNote leaves dangling at the end of table cells or paragraphs
   html = html.replace(/<br[^>]*>\s*(?=<\/(td|p|div)>)/gi, "");
+
   // Headings get double line breaks so they stand out in Markdown
   html = html.replace(/<\/(h[1-6])>/gi, "\n");
+
   // Explicit <br> tags become single line breaks
   html = html.replace(/<br[^>]*>/gi, "\n");
+
   // Paragraphs, divs, lists, and tables get a single line break
   // (Notice we removed td and tr so 1x1 image tables don't generate massive gaps)
   html = html.replace(/<\/(p|div|li|table)>/gi, "\n");
 
-  // --- TAGS REMOVAL ---
-  // Strip all remaining HTML tags (like <span>, <table>, <b>)
-  let cleanText = html.replace(/<[^>]*>?/gm, "");
+  return html;
+}
 
-  // --- CHARACTERS DECODER ---
-  // Decode standard HTML entities so characters render correctly
-  cleanText = cleanText
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"');
-
-  // --- WHITESPACE REMOVAL
-  // Clean up whitespace gently
+function whitespaceRemoval(cleanText) {
   cleanText = cleanText
     .split("\n")
     .map((line) => line.trim()) // Remove trailing/leading invisible spaces
     .join("\n"); // Join them back with normal single line breaks
+
   // Collapse 3 or more massive line breaks down to exactly 2 (standard Markdown spacing)
   cleanText = cleanText.replace(/\n{3,}/g, "\n\n");
 
-  // --- HEADER SNAPPING ---
-  // Find any multiple line breaks (\n) that happen right before a header (# )
-  // and force them to collapse into a single line break so the header snaps to the text above it.
-  cleanText = cleanText.replace(/\n+(?=# )/g, "\n");
+  return cleanText;
+}
 
-  // --- CUSTOM PREFIX HEADERS (xh1, xh2, xh3...) ---
+function headersHandler(cleanText) {
   // Handles plain text, Courier New (backticks), Bold/Italics, AND strips colors!
+
   cleanText = cleanText
     .split("\n")
     .map((line) => {
@@ -272,19 +332,8 @@ function main() {
     })
     .join("\n");
 
-  // --- REMOVE REDUNDANT "GENERAL" TITLE ---
-  // If the very first thing in the text is the "# General" header, delete it
-  // and any empty lines immediately following it.
-  cleanText = cleanText.replace(/^\s*# General\n*/i, "");
-
-  // --- SAVE ---
-  // Save the final text back to the n8n item
-  item.json.extractedText = cleanText;
-
-  // TODO REMOVE BEFORE PASTING TO n8n. slvu
-  return item;
+  return cleanText;
 }
 
 const result = main();
-
 fs.writeFileSync("output.json", JSON.stringify(result));
