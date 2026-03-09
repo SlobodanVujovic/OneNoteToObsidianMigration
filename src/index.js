@@ -287,4 +287,4 @@ function main() {
 
 const result = main();
 
-console.log(JSON.stringify(result));
+fs.writeFileSync("output.json", JSON.stringify(result));
