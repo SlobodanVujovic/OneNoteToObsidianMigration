@@ -1,0 +1,637 @@
+{
+  "name": "OneNoteToObsidian_v1",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://graph.microsoft.com/v1.0/me/onenote/notebooks",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1296,
+        -368
+      ],
+      "id": "40730a44-51ad-4924-9f33-2f20fc35453f",
+      "name": "GET OneNote Notebooks",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "pYYCsS1Xfn7O7wbZ",
+          "name": "Personal vujo00 MS OneNote connection"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://graph.microsoft.com/v1.0/users/vujo00@gmail.com/onenote/notebooks/0-9F971AC3EB8340C4!350/sections",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1296,
+        -160
+      ],
+      "id": "e1009a01-a50b-4cb6-9bce-524bf84e7bf4",
+      "name": "GET OneNote Sections",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "pYYCsS1Xfn7O7wbZ",
+          "name": "Personal vujo00 MS OneNote connection"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://graph.microsoft.com/v1.0/users/vujo00@gmail.com/onenote/sections/0-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/pages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1712,
+        288
+      ],
+      "id": "54eb02c6-7a47-4797-8230-edff7646daf8",
+      "name": "GET OneNote Migration Pages",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "pYYCsS1Xfn7O7wbZ",
+          "name": "Personal vujo00 MS OneNote connection"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.microsoft.com/v1.0/users/vujo00@gmail.com/onenote/pages/{{ $json.id }}/content",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -816,
+        192
+      ],
+      "id": "c6692a3a-f736-4b89-91f9-a67ac14cc0e7",
+      "name": "GET OneNote Migration \"Nested types - TEST\" Page",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "pYYCsS1Xfn7O7wbZ",
+          "name": "Personal vujo00 MS OneNote connection"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// TODO \n// 1. Prebaci u IDE i testiraj nad odredjenim input-om i vidi kako izgleda output\n// Reorder-uj redosled kojim se izvrsavaju stvari u skripti\n// 2. ul - bullet points\n// 3. ol - numbered points\n// 4. tekst markiran drugom bojom se ne detektuje\n\nfor (let item of $input.all()) {\n  // 1. Get the raw HTML\n  let html = item.json.data || \"\"; \n\n  // --- EXTRACT TITLE EARLY ---\n  // Grab the title before we alter the HTML\n  const titleMatch = html.match(/<title>(.*?)<\\/title>/i);\n  let noteTitle = titleMatch ? titleMatch[1].trim() : 'Untitled Note';\n  // Sanitize the title for file names\n  noteTitle = noteTitle.replace(/[\\\\/:\"*?<>|]/g, '-');\n  noteTitle = noteTitle.replace(/[\\s]/g, '_');\n  item.json.noteTitle = noteTitle;\n\n  // --- DESTROY THE HEAD SECTION ---\n  // This completely deletes <head>, <title>, and <meta> tags so their text doesn't leak into your note\n  html = html.replace(/<head[^>]*>[\\s\\S]*?<\\/head>/gi, '');\n\n  // --- SORT OUTLINE CONTAINERS BY VISUAL ORDER (Top-to-Bottom) ---\n  // OneNote returns text boxes in creation order. This intercepts them, \n  // reads their absolute X/Y coordinates, and sorts them visually!\n  let bodyMatch = html.match(/<body[^>]*>([\\s\\S]*?)<\\/body>/i);\n  if (bodyMatch) {\n      let bodyInnerHtml = bodyMatch[1];\n      // Split the body HTML right before any absolute-positioned div (container) begins\n      let containers = bodyInnerHtml.split(/(?=<div[^>]*style=\"[^\"]*position:\\s*absolute[^\"]*\")/i);\n      let sortedContainers = containers.map(chunk => {\n          // Extract the top (Y) and left (X) pixel coordinates\n          let topMatch = chunk.match(/top:\\s*([0-9.]+)px/i);\n          let leftMatch = chunk.match(/left:\\s*([0-9.]+)px/i);\n          \n          return {\n              html: chunk,\n              top: topMatch ? parseFloat(topMatch[1]) : -1, // -1 keeps non-positioned elements at the very top\n              left: leftMatch ? parseFloat(leftMatch[1]) : -1\n          };\n      }).sort((a, b) => {\n          // Sort them strictly Top-to-Bottom\n          return a.top - b.top;\n      });\n      \n      // Rebuild the HTML in the perfectly sorted order!\n      let sortedBody = sortedContainers.map(c => c.html).join('\\n');\n      html = html.replace(bodyInnerHtml, sortedBody);\n  }\n\n  // --- FLATTENS HTML ---\n  // This completely flattens the HTML so the only line breaks will be the ones we manually add\n  html = html.replace(/[\\r\\n]+/g, ' ');\n\n  // --- INTRODUCE CALLOUTS ---\n  // Replace OneNote tags with Obsidian Callouts and remove their <p> tags completely\n  // The ([\\s\\S]*?) captures whatever text is inside the paragraph and saves it as $1\n  html = html.replace(/<p[^>]*data-tag=\"important\"[^>]*>([\\s\\S]*?)<\\/p>/gi, '> [!note]\\n> $1\\n\\n');\n  html = html.replace(/<p[^>]*data-tag=\"critical\"[^>]*>([\\s\\S]*?)<\\/p>/gi, '> [!vazno] Important\\n> $1\\n\\n');\n  html = html.replace(/<p[^>]*data-tag=\"idea\"[^>]*>([\\s\\S]*?)<\\/p>/gi, '> [!tip]\\n> $1\\n\\n');\n\n  // --- IMAGE PROCESSING ---\n  // Extract Images, generate Obsidian links, and save URLs for downloading\n  item.json.imagesToDownload = []; \n  // Safely capture the entire <img> tag even if attributes span multiple lines\n  html = html.replace(/<img\\b(?:[^>\"]|\"[^\"]*\")*>/gi, (match) => {\n      // Extract ONLY the src URL\n      let srcMatch = match.match(/src=\"([^\"]+)\"/i);\n      let src = srcMatch ? srcMatch[1] : '';\n\n      if (!src) return match; // Skip if there is no URL\n\n      // Extract the image width\n      let widthMatch = match.match(/width=\"([^\"]+)\"/i);\n      let widthStr = widthMatch ? widthMatch[1] : '';\n      \n      // OneNote sometimes outputs decimals (like \"326.5\"). Obsidian prefers whole numbers.\n      // We parse the number, round it, and optionally cap it at 800px so massive images don't break your screen.\n      let finalWidth = '';\n      if (widthStr) {\n          let parsedWidth = Math.round(parseFloat(widthStr));\n          finalWidth = `|${parsedWidth}`;\n      }\n\n      // Extract the OneNote resource ID for a clean filename\n      let resIdMatch = src.match(/resources\\/([^\\/]+)\\/\\$value/i);\n      let fileName = resIdMatch ? `img_${resIdMatch[1].substring(0, 12)}.png` : `img_${Math.floor(Math.random()*10000)}.png`;\n\n      // Save for the download loop\n      item.json.imagesToDownload.push({ \n          url: src, \n          fileName: fileName \n      });\n\n      // Insert the clean Obsidian image link WITH the extracted width!\n      // E.g., ![[img_0-991abce7.png|535]]\n      return `![[${fileName}${finalWidth}]]\\n`;\n  });\n\n  // --- COURIER NEW FONT HANDLER ---\n  // Extract Courier New text and convert it to Obsidian inline code\n  // This looks for any span where the style contains \"font-family:Courier New\" (with or without quotes/spaces)\n  html = html.replace(/<span[^>]*style=\"[^\"]*font-family:\\s*'?Courier New'?[^\"]*\"[^>]*>([\\s\\S]*?)<\\/span>/gi, (match, text) => {\n      // Clean up any weird invisible line breaks OneNote might have forced inside the span\n      let cleanCode = text.trim().replace(/\\n/g, ' ');\n    \n      // Wrap the text in backticks\n      return `\\`${cleanCode}\\``;\n  });\n\n  // --- LINIS HANDLER ---\n  // Extract Links and handle embedded styles\n  html = html.replace(/<a\\b([^>]*)>([\\s\\S]*?)<\\/a>/gi, (match, attributes, text) => {\n      let hrefMatch = attributes.match(/href=\"([^\"]+)\"/i);\n      let url = hrefMatch ? hrefMatch[1] : '';\n      let cleanText = text.replace(/\\n/g, ' ').trim();\n\n      if (!url) return cleanText;\n     \n      let mdLink = `[${cleanText}](${url})`;\n\n      let styleMatch = attributes.match(/style=\"([^\"]+)\"/i);\n      if (styleMatch) {\n          let style = styleMatch[1].toLowerCase();\n          \n          // Use temporary HTML tags instead of asterisks here!\n          if (style.includes('font-style:italic') || style.includes('font-style: italic')) {\n              mdLink = `<i>${mdLink}</i>`;\n          }\n      }\n      return mdLink;\n  });\n\n  // --- ITALIC FONT HANDLER ---\n  // Extract italic spans (Use temporary <i> tags)\n  html = html.replace(/<span[^>]*style=\"[^\"]*font-style:\\s*italic[^\"]*\"[^>]*>([\\s\\S]*?)<\\/span>/gi, (match, text) => {\n      let cleanItalic = text.replace(/\\n/g, ' ');\n      \n    return `<i>${cleanItalic}</i>`;\n  });\n  // Merge touching formatting and convert to final Markdown\n  // This melts touching tags together (e.g., </i><i> becomes nothing, joining the text)\n  html = html.replace(/<\\/i>\\s*<i>/gi, '');\n  // Now safely convert the clean blocks to Markdown asterisks!\n  html = html.replace(/<i>([\\s\\S]*?)<\\/i>/gi, '*$1*');\n\n  // --- HIGHLIGHTED TEXT HANDLER ---\n  // Extract text highlights and convert them to Obsidian format\n  // This looks for any span that has a background or background-color defined\n  html = html.replace(/<span[^>]*style=\"[^\"]*(?:background-color|background):\\s*([^;\"]+)[^\"]*\"[^>]*>([\\s\\S]*?)<\\/span>/gi, (match, color, text) => {    \n      // Clean up the extracted color string just in case OneNote added extra spaces\n      color = color.trim().toLowerCase();\n      // If the color is lime (or its hex equivalent), use Obsidian's native Markdown highlight\n      if (color === 'lime' || color === '#00ff00') {\n          return `==${text}==`;\n      } \n      // For any other color, use the HTML <mark> tag to preserve the exact OneNote shade\n      else {\n          return `<mark style=\"background: ${color};\">${text}</mark>`;\n      }\n  });\n\n  // --- EMPTY LINE HANDLER ---\n  // Destroy rogue <br> tags that OneNote leaves dangling at the end of table cells or paragraphs\n  html = html.replace(/<br[^>]*>\\s*(?=<\\/(td|p|div)>)/gi, '');\n  // Headings get double line breaks so they stand out in Markdown\n  html = html.replace(/<\\/(h[1-6])>/gi, '\\n');\n  // Explicit <br> tags become single line breaks\n  html = html.replace(/<br[^>]*>/gi, '\\n');\n  // Paragraphs, divs, lists, and tables get a single line break\n  // (Notice we removed td and tr so 1x1 image tables don't generate massive gaps)\n  html = html.replace(/<\\/(p|div|li|table)>/gi, '\\n');\n\n  // --- TAGS REMOVAL ---\n  // Strip all remaining HTML tags (like <span>, <table>, <b>)\n  let cleanText = html.replace(/<[^>]*>?/gm, '');\n\n  // --- CHARACTERS DECODER ---\n  // Decode standard HTML entities so characters render correctly\n  cleanText = cleanText\n      .replace(/&nbsp;/g, ' ')\n      .replace(/&amp;/g, '&')\n      .replace(/&lt;/g, '<')\n      .replace(/&gt;/g, '>')\n      .replace(/&quot;/g, '\"');\n\n  // --- WHITESPACE REMOVAL\n  // Clean up whitespace gently\n  cleanText = cleanText.split('\\n')\n      .map(line => line.trim()) // Remove trailing/leading invisible spaces\n      .join('\\n'); // Join them back with normal single line breaks\n  // Collapse 3 or more massive line breaks down to exactly 2 (standard Markdown spacing)\n  cleanText = cleanText.replace(/\\n{3,}/g, '\\n\\n');\n\n  // --- HEADER SNAPPING ---\n  // Find any multiple line breaks (\\n) that happen right before a header (# ) \n  // and force them to collapse into a single line break so the header snaps to the text above it.\n  cleanText = cleanText.replace(/\\n+(?=# )/g, '\\n');\n\n  // --- CUSTOM PREFIX HEADERS (xh1, xh2, xh3...) ---\n  // Handles plain text, Courier New (backticks), Bold/Italics, AND strips colors!\n  cleanText = cleanText.split('\\n').map(line => {\n      \n      let trimmedLine = line.trim();\n      \n      // Notice we added '=' to the first bracket! This catches cases where \n      // you accidentally highlighted the \"xh1\" prefix too (e.g., ==xh1 Title==)\n      let match = trimmedLine.match(/^([`*=>]*)(xh[1-6])(?:\\s+|$)(.*)/i);\n      \n      if (match) {\n          let formatting = match[1]; \n          let prefix = match[2];     \n          let restOfLine = match[3]; \n          \n          let level = parseInt(prefix.toLowerCase().replace('xh', ''));\n          let hashes = '#'.repeat(level);\n          \n          // --- NEW: STRIP HIGHLIGHTS FROM HEADERS ---\n          // 1. Wash off any == from the text\n          restOfLine = restOfLine.replace(/==/g, '');\n          // 2. Wash off any <mark> tags (for non-lime colors)\n          restOfLine = restOfLine.replace(/<\\/?mark[^>]*>/gi, '');\n          // 3. Wash off any == that snuck into the front formatting\n          formatting = formatting.replace(/=/g, '');\n          \n          // Rebuilds the clean Obsidian header\n          return `${hashes} ${formatting}${restOfLine}`;\n      }\n      \n      return line; // Leave non-header lines alone\n  }).join('\\n');\n  \n  // --- REMOVE REDUNDANT \"GENERAL\" TITLE ---\n  // If the very first thing in the text is the \"# General\" header, delete it \n  // and any empty lines immediately following it.\n  cleanText = cleanText.replace(/^\\s*# General\\n*/i, '');\n\n  // --- SAVE ---\n  // Save the final text back to the n8n item\n  item.json.extractedText = cleanText;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -576,
+        192
+      ],
+      "id": "66407a56-48ce-4836-8106-688075a92c8a",
+      "name": "Extract text from HTML"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "imagesToDownload",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        704,
+        320
+      ],
+      "id": "15e081bb-8ce2-4a8e-ab9b-21bae4e4b3ec",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        944,
+        320
+      ],
+      "id": "69bbd48a-e31c-45fa-8e7c-ba491f0b41b4",
+      "name": "HTTP Request",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "pYYCsS1Xfn7O7wbZ",
+          "name": "Personal vujo00 MS OneNote connection"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "borderWidth": 1,
+        "borderHeight": 1,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        320
+      ],
+      "id": "dca3e6a3-752f-4830-b464-59e5ea472c63",
+      "name": "Edit Image"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1968,
+        288
+      ],
+      "id": "f1916f38-7d5f-4b87-b431-5c65f449d7e7",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "fileName": "={{ $json.noteTitle }}.md",
+        "parentId": "={{ $json.folderId }}",
+        "fileContent": "={{ $json.extractedText }}"
+      },
+      "type": "n8n-nodes-base.microsoftOneDrive",
+      "typeVersion": 1.1,
+      "position": [
+        1472,
+        176
+      ],
+      "id": "08826d2d-ff05-48c4-b9a7-aa0d974b3709",
+      "name": "Upload MD file",
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "HRdZpJxHt4OZS5Gt",
+          "name": "Personal vujo00 MS OneDrive connection"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fileName": "={{ $('Split Out').item.json.fileName }}",
+        "parentId": "={{ $('Target folder').item.json.mediaFolderId }}",
+        "binaryData": true
+      },
+      "type": "n8n-nodes-base.microsoftOneDrive",
+      "typeVersion": 1.1,
+      "position": [
+        1472,
+        320
+      ],
+      "id": "fa4b8c6c-ae4b-4cd8-a43d-de876d5a9e94",
+      "name": "Upload image",
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "HRdZpJxHt4OZS5Gt",
+          "name": "Personal vujo00 MS OneDrive connection"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.microsoft.com/v1.0/me/drive/items/9F971AC3EB8340C4!s95827c798fd548ab87ffedbe1dbe54d4:/{{ encodeURIComponent($json.noteTitle) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -352,
+        192
+      ],
+      "id": "08fcc5fe-b89f-406d-b1e9-39b82b39402f",
+      "name": "GET note folder metadata",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "pYYCsS1Xfn7O7wbZ",
+          "name": "Personal vujo00 MS OneNote connection"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bf836826-99d0-45d3-bd2b-eced6fbc2d1d",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -160,
+        192
+      ],
+      "id": "d289d160-2be3-4b60-9296-5d5ee2fadfcf",
+      "name": "Check if note folder exists"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a0ead0f7-5228-4fc4-87a8-a55d274586b0",
+              "name": "folderId",
+              "value": "={{ $('Create folder').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "7eba8952-88da-493b-a9ab-99bfd4e83f66",
+              "name": "mediaFolderId",
+              "value": "={{ $('Create media folder').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "c6a7a346-295c-4dfd-9a2f-ff829dbbd4d4",
+              "name": "noteTitle",
+              "value": "={{ $('Extract text from HTML').first().json.noteTitle }}",
+              "type": "string"
+            },
+            {
+              "id": "869a2351-1037-40de-81c2-a2e19c7e51e9",
+              "name": "extractedText",
+              "value": "={{ $('Extract text from HTML').first().json.extractedText }}",
+              "type": "string"
+            },
+            {
+              "id": "2cbd09b2-91d3-45c9-aeeb-8e11391ac9c5",
+              "name": "imagesToDownload",
+              "value": "={{ $('Extract text from HTML').first().json.imagesToDownload }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        176
+      ],
+      "id": "ea2c7e49-aa33-44e1-82ff-7875e0fb67ad",
+      "name": "Target folder"
+    },
+    {
+      "parameters": {
+        "resource": "folder",
+        "operation": "create",
+        "name": "media",
+        "options": {
+          "parentFolderId": "={{ $json.id }}"
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOneDrive",
+      "typeVersion": 1.1,
+      "position": [
+        288,
+        288
+      ],
+      "id": "ad1a19ab-6107-4767-97db-d6f1e560989e",
+      "name": "Create media folder",
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "HRdZpJxHt4OZS5Gt",
+          "name": "Personal vujo00 MS OneDrive connection"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "folder",
+        "operation": "create",
+        "name": "={{ $('Extract text from HTML').item.json.noteTitle }}",
+        "options": {
+          "parentFolderId": "9F971AC3EB8340C4!s95827c798fd548ab87ffedbe1dbe54d4"
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOneDrive",
+      "typeVersion": 1.1,
+      "position": [
+        48,
+        288
+      ],
+      "id": "412bba85-a9aa-4134-be54-24cd63b3c83d",
+      "name": "Create folder",
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "HRdZpJxHt4OZS5Gt",
+          "name": "Personal vujo00 MS OneDrive connection"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1168,
+        288
+      ],
+      "id": "a60141c1-667d-414b-aafe-8f07debaccb2",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1888,
+        416
+      ],
+      "id": "fb562ac0-691e-40e0-9940-31fcf7051dcc",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "value",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -1456,
+        288
+      ],
+      "id": "b86bedd5-6301-44d8-a612-cc9ae6506e09",
+      "name": "Split Pages"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "GET OneNote Notebooks": {
+      "main": [
+        []
+      ]
+    },
+    "GET OneNote Migration \"Nested types - TEST\" Page": {
+      "main": [
+        [
+          {
+            "node": "Extract text from HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract text from HTML": {
+      "main": [
+        [
+          {
+            "node": "GET note folder metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Edit Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Image": {
+      "main": [
+        [
+          {
+            "node": "Upload image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "GET OneNote Migration Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload MD file": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET note folder metadata": {
+      "main": [
+        [
+          {
+            "node": "Check if note folder exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if note folder exists": {
+      "main": [
+        [
+          {
+            "node": "Target folder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Target folder": {
+      "main": [
+        [
+          {
+            "node": "Upload MD file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create media folder": {
+      "main": [
+        [
+          {
+            "node": "Target folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create folder": {
+      "main": [
+        [
+          {
+            "node": "Create media folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET OneNote Migration Pages": {
+      "main": [
+        [
+          {
+            "node": "Split Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "GET OneNote Migration \"Nested types - TEST\" Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload image": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Pages": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "2f956de6-8c48-4f3d-b31e-1353b70544ec",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ab04edf7cc6c8e07fb0d9db4aa2bd0209bb8c571328bf26ba52fb301e316a202"
+  },
+  "id": "T5kuhPFoDd06DNhRKHKZb",
+  "tags": []
+}

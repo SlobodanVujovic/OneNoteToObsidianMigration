@@ -1,0 +1,137 @@
+<html lang="en-US">
+	<head>
+		<title>Nested types - TEST</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<meta name="created" content="2024-03-02T05:20:00.0000000" />
+	</head>
+	<body data-absolute-enabled="true" style="font-family:Calibri;font-size:11pt">
+		<div style="position:absolute;left:48px;top:115px;width:2178px">
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">General</span></p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt">Klasa moze imati nested klase i interface-a. Tipovi nested klasa su:</p>
+			<table style="border:1px solid;border-collapse:collapse">
+				<tr>
+					<td style="border:1px solid"><img alt="Machine generated alternative text:
+Inner classes 
+Nonstatic member classes 
+• Anonymous classes 
+• Local classes 
+Static member classes " width="271" height="154" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-b9aaa8b1b08744e09cf8b5a826b1c489!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-b9aaa8b1b08744e09cf8b5a826b1c489!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+					</td>
+				</tr>
+			</table>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-style:italic">1Z0-809, 24. str.</span></p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt">Par napomena u vezi top level i nested klasa:</p>
+			<table style="border:1px solid;border-collapse:collapse">
+				<tr>
+					<td style="border:1px solid"><img alt="Machine generated alternative text:
+Nested classes all access levels 
+Top-level classes only public &amp; default " width="403" height="76" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-5805aa587bcd42c7b12878132fa97f08!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-5805aa587bcd42c7b12878132fa97f08!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+					</td>
+				</tr>
+			</table>
+			<table style="border:1px solid;border-collapse:collapse">
+				<tr>
+					<td style="border:1px solid"><img alt="Machine generated alternative text:
+Mutual accessibility of members including private " width="566" height="30.5" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-7f1f2ca97d144a6f9ef84565ce02ce8f!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-7f1f2ca97d144a6f9ef84565ce02ce8f!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+					</td>
+				</tr>
+			</table>
+			<p data-tag="important" style="margin-top:0pt;margin-bottom:0pt">Ovo znaci da <span style="background-color:lime">nested klasa</span> moze pristupiti bilo kom member-u outer klase i obrnuto. Obrati paznju da kaze nested klasa sto znaci samo: nonstatic member klase, anonymous klase i lokal klase, ne i static member klase. Za static member klase ovo pravilo znaci da mogu pristupiti samo <span style="font-family:Courier New">static </span>member-ima outer klase i obrnuto. </p>
+			<p style="margin-top:0pt;margin-bottom:0pt">There is obviously a very tight coupling between the nested class and outher class. The nested class is considered to be a part of the enclosing class just as are any of the enclosing class’s methods.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Kada se kompajliraju klase koje sadrze nested klase, kompajler kreira 2 <span style="font-family:Courier New">.class </span>file-a sa nazivima:</p>
+			<table style="border:1px solid;border-collapse:collapse">
+				<tr>
+					<td style="border:1px solid"><img alt="Machine generated alternative text:
+Outer.class &amp; Outer$Nested.class 
+Anonymous Outer.class &amp; Outer$l .class, Outer$2.class " width="566" height="80" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-3a71f2fde6864c57bc9cf922edd10998!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-3a71f2fde6864c57bc9cf922edd10998!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+					</td>
+				</tr>
+			</table>
+			<p style="margin-top:0pt;margin-bottom:0pt">Posto anonymous klase nemaju ime onda se njima dodeljuju brojevi.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">As a <span style="background-color:lime">style guide</span>, we usually write inner classes at the end of the enclosing class—after the methods.</p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">Nonstatic member class</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Ponasa se kao i svaki 2. <span style="background-color:lime">instance member outer klase</span>. Ne moze se kreirati bez instance outer klase, zato se i naziva nonstatic jer zahteva instancu outer klase. Posto je outer objekat obavezan, inner objekat ima <span style="background-color:lime">hidden referencu</span> ka outer objektu.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Koristimo ih kada objekat inner klase zahteva pristup objektu outer klase. Nonstatic member klase cesto imaju ulogu <span style="background-color:lime">adaptera</span>, tj. kada zelimo da istu klasu predstavimo na razlicite nacine, npr.:</p>
+			<table style="border:1px solid;border-collapse:collapse">
+				<tr>
+					<td style="border:1px solid"><img alt="Machine generated alternative text:
+entrySet() 
+EntrySet 
+iterator() 
+Map 
+Entry 
+getKey() 
+getVaIue() 
+HashMap 
+Entrylterator 
+next() 
+Node 
+getKey() " width="535" height="326.5" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-991abce73c82485384da56f3cbddb27a!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-991abce73c82485384da56f3cbddb27a!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+					</td>
+				</tr>
+			</table>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">HashMap-a </span>implementira <span style="font-family:Courier New">Map </span>interface. Kada pozovemo <span style="font-family:Courier New">HashMap#entrySet() </span>dobicemo instancu <span style="font-family:Courier New">EntrySet </span>inner klase koja predstavlja <span style="font-family:Courier New">Set </span>sa <span style="font-family:Courier New">Map.Entry-ma</span>. Kada pozovemo<span style="font-family:Courier New"> EntrySet#iterator()</span> dobicemo objekat interne klase <span style="font-family:Courier New">EntryIterator </span>koja pak ima metod <span style="font-family:Courier New">next() </span>koji vraca objekat <span style="font-family:Courier New">Node </span>inner klase.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Outer object nece biti GC-ovan ako postoji inner objekat jer taj inner objekat ima hidden referencu ka outer objektu.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-style:italic">Obuka Udemy, Java in depth, 262. ep.</span></p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">Anonymous klase</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Deklarisemo ih i instanciramo na istom mestu, tamo gde je to potrebno.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Koristimo ih da bi izrazili odredjenu strategiju. Npr., pri kreiranju <span style="font-family:Courier New">TreeSet-a </span>mozemo koristiti anonymous klasu kako bi definisali strategiju koja ce se koristiti za sortiranje elemenata <span style="font-family:Courier New">Set-a</span>. Compiler generates a new class file for each anonymous inner class. The filename usually looks like <span style="font-family:Courier New">ClassName$1</span>, where <span style="font-family:Courier New">ClassName </span>is the name of the class in which the anonymous inner class is defined, followed by a dollar sign and a number. The generation of many class files is undesirable because each class file needs to be loaded and verified before being used, which impacts the startup performance of the application. Takodje, instanca anonymous klase se kreira svaki put kada se pozove kod gde je anonymous klasa definisana, sto moze biti skupa operacija (because of this we often use anonymous classes where only a single instance of the implementation will be required). Da bi se ovo sprecilo mozemo koristiti:</p>
+			<table style="border:1px solid;border-collapse:collapse">
+				<tr>
+					<td style="border:1px solid"><img alt="Machine generated alternative text:
+private static final STR_LENGTH COMPARATOR = 
+new Comparator&lt;String>() { 
+public int compare(String sl , String s2) { 
+return sl .length() — s2.length(); " width="522" height="133.5" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-90c7940d8df54b8186be8b266e1ca635!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-90c7940d8df54b8186be8b266e1ca635!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+					<br />
+					</td>
+				</tr>
+			</table>
+			<p style="margin-top:0pt;margin-bottom:0pt">Obrati paznju da instanciramo interface i zato je ovo anonymous klasa koja ce se samo 1 kreirati i onda je mozemo koristiti na vise mesta. Posto je ovo u sustini izraz, moramo staviti<span style="font-family:Courier New"> ; </span>iza body-a anonymous klase. Sada <span style="font-family:Courier New">STR_LENGTH_COMPARATOR </span>mozemo proslediti svuda gde se zahteva <span style="font-family:Courier New">Comparator</span> instanca. Medjutim ako zelimo da prosledimo 2 string-a <span style="font-family:Courier New">compare() </span>metodu u okviru ove anonymous klase, onda to mozemo uraditi sa:</p>
+			<p data-tag="important" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New;color:black">STR_LENGTH_COMPARATOR.compare(&quot;java&quot;, &quot;javascript&quot;);</span></p>
+			<p data-tag="idea" style="margin-top:0pt;margin-bottom:0pt"><span style="color:black">Ovo je isto kao da smo kreirali klasu koja implementira </span><span style="font-family:Courier New;color:black">Comparator </span><span style="color:black">interface i u njoj definisali </span><span style="font-family:Courier New;color:black">compare </span><span style="color:black">metod. Ovde isto kreiramo novu klasu ali joj nigde ne definisemo ime, koristimo samo interface i zato kompajler koristi sufiks u obliku</span><span style="font-family:Courier New;color:black"> $1</span><span style="color:black">. Ovo ne moramo raditi samo sa interface-om, mozemo koristiti i apstraktnu klasu ili regularnu klasu ako zelimo da kreiramo novu klasu koja ih extend-uje. Ali posto nigde ne definisemo ime te nove klase onda je ona anonimana klasa.</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="color:black">Kada se anonymous klasa koristi unutar metoda onda ona ima </span><span style="color:black;background-color:lime">pristup i lokalnim promenljivama i parametrima metoda</span><span style="color:black">, medjutim, ovo vazi samo ako su te lokalne promenljive i parametri deklarisani kao </span><span style="font-family:Courier New;color:black">final</span><span style="color:black">.</span></p>
+			<p data-tag="idea" style="margin-top:0pt;margin-bottom:0pt"><span style="color:black">Anonymous inner classes are a useful construct for implementing event listeners.</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-style:italic">Obuka Udemy, Java in depth, 263. ep.</span></p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">Static member classes</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Koristimo kada nam treba nested klasa kojoj ne treba pristup member-ima outer klase. Static member class se naziva <span style="background-color:lime">static</span> zato sto je ona zapravo <span style="background-color:lime">staticki member outer klase</span>. Posto je ona staticki member to znaci da joj mozemo pristupiti bez da postoji instanca outer klase, isto kao sto mozemo pristupiti statickim metodama i poljima klase bez da postoji instanca te klase. Da bi pristupili statickom polju static member klase koristimo sintaksu:</p>
+			<table style="border:1px solid;border-collapse:collapse">
+				<tr>
+					<td style="border:1px solid"><img width="278" height="24.5" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-86cd152ceab74015afc3b9c754b0aecc!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-86cd152ceab74015afc3b9c754b0aecc!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+					</td>
+				</tr>
+			</table>
+			<p style="margin-top:0pt;margin-bottom:0pt">Instanciranje static member klase radimo na sledeci nacin:</p>
+			<table style="border:1px solid;border-collapse:collapse">
+				<tr>
+					<td style="border:1px solid"><img alt="Machine generated alternative text:
+Outer.StaticNested nested = new Outer.StaticNested(); " width="432" height="22" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-64a87c70579240538852abd88b93ce77!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-64a87c70579240538852abd88b93ce77!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+					</td>
+				</tr>
+			</table>
+			<table style="border:1px solid;border-collapse:collapse">
+				<tr>
+					<td style="border:1px solid"><img alt="Machine generated alternative text:
+Common Uses 
+Represent private components of enclosing objects 
+Represent strategies 
+Public helper class " width="486" height="165" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-d88bcca0be65438e951b94934674e891!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-d88bcca0be65438e951b94934674e891!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+					</td>
+				</tr>
+			</table>
+			<p style="margin-top:0pt;margin-bottom:0pt">Primer 1. use case-a je <span style="font-family:Courier New">Node </span>static member klasa u okviru <span style="font-family:Courier New">HashMap-e</span>. <span style="font-family:Courier New">HashMap-a </span>koristi instance <span style="font-family:Courier New">Node </span>klase kako bi u njima cuvao key-value parove ali, sa 2. strane, <span style="font-family:Courier New">Node </span>objektu ne treba pristup podacima iz outer klase (static member klasa nema hidden referencu ka outer objektu sto znaci da zauzima manje prostora od nonstatic member klase).</p>
+			<br />
+			<p data-tag="idea" style="margin-top:0pt;margin-bottom:0pt">A static member class has access to all <span style="font-family:Courier New">static </span>members of its containing class, including <span style="font-family:Courier New">private</span> members. The reverse is true as well: the methods of the containing class have access to all members of a static member class, including the <span style="font-family:Courier New">private</span> members. A static member class even has access to all the members of any other static member classes, including the <span style="font-family:Courier New">private </span>members of those classes.</p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt">A static member class cannot have the same name as any of its enclosing classes. In addition, static member classes and interfaces can be defined only within top-level classes and in other static member classes and interfaces. This is actually part of a larger prohibition against static members of any sort within member, local, and anonymous classes.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-style:italic">Obuka Udemy, </span><a href="onenote:Java.one#Nested%20types&amp;section-id={2C59F4F1-88C2-4BAE-B7CD-F075B944BAA5}&amp;page-id={8C254293-D46F-404A-A63C-08301E5D2AA8}&amp;end&amp;base-path=https://d.docs.live.net/9F971AC3EB8340C4/Documents/OneNote%202016/Programiranje" style="font-style:italic">Java in depth</a><span style="font-style:italic">, 265. ep.</span></p>
+			<br />
+			<p data-tag="critical" style="margin-top:0pt;margin-bottom:0pt">Ovo je nesto jako vazno.</p>
+		</div>
+	</body>
+</html>

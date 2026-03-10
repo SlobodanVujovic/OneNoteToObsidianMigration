@@ -1,0 +1,916 @@
+<html lang="en-GB">
+	<head>
+		<title>Just language</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<meta name="created" content="2018-03-11T15:13:00.0000000" />
+	</head>
+	<body data-absolute-enabled="true" style="font-family:Calibri;font-size:11pt">
+		<div style="position:absolute;left:48px;top:18203px;width:1599px">
+			<p style="margin-top:0pt;margin-bottom:0pt">xh1 <span style="font-family:Courier New;background-color:lime">TransactionSynchronizatioRegistry (TSR)</span></p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt">TSR je poput <span style="font-family:Courier New">HashMap-e</span> koja je povezana sa transakcijom.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Koristimo ga tako sto u njega stavimo neke podatke i kada god smo u <span style="background-color:lime">sinhronoj transakciji</span> (sinhrono znaci da posaljemo request i cekamo dok ne dobijemo response) mozemo pristupati podacima. Ovo ne vazi za asinhrone transakcije jer se tada podaci gube.</p>
+		</div>
+		<div style="position:absolute;left:48px;top:17620px;width:2138px">
+			<p style="margin-top:0pt;margin-bottom:0pt">xh1 <span style="background-color:lime">Interfaces</span></p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt">Ne smatraju se pod best practice u Java EE-u. Dovoljni su <span style="font-family:Courier New">public</span> metodi EJB-ova ili CDI-ova i oni zapravo cine interface. Dobri su kada imamo razlicite implementacije istog algoritma i koristimo <span style="font-family:Courier New">strategy pattern</span>. Interface je <span style="background-color:lime">robustan</span> ako isporucuje kvalitetan <span lang="yo-NG">JSON</span>, npr., a prihvata bilo kakav <span lang="yo-NG">JSON</span> ali iz njega izvlaci samo ono sto mu treba.</p>
+		</div>
+		<div style="position:absolute;left:48px;top:18328px;width:1599px">
+			<p style="margin-top:0pt;margin-bottom:0pt">xh1 <span style="background-color:lime">Novac</span></p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt">Za rad sa novcem koristimo JSR (Java Specification Request) 354 - <span style="background-color:lime">Money and Currency API</span>.</p>
+		</div>
+		<div style="position:absolute;left:48px;top:14386px;width:1599px">
+			<p style="margin-top:0pt;margin-bottom:0pt">xh1 <span style="background-color:lime">Best practice</span></p>
+			<br />
+			<ol>
+				<li>Pisati prost kod i time omoguciti JVM-u da prvo &quot;razume&quot; kod a onda i da interno izvrsi optimizaciju koda. Ne optimizovati bez prethodno uocenih problema.</li>
+			</ol>
+		</div>
+		<div style="position:absolute;left:48px;top:14498px;width:2130px">
+			<p style="margin-top:0pt;margin-bottom:0pt">xh1 <span style="background-color:lime">Redosled inicijalizacije objekta</span></p>
+			<br />
+			<ol>
+				<li>Ako postoji super klasa, prvo se ona inicijalizuje.</li>
+				<li><span style="font-family:Courier New">static</span> variable declaration i <span style="font-family:Courier New">static</span> initializers redosledom kojim se nalaze u file-u. <span lang="en-US">A </span><span lang="en-US" style="font-family:Courier New">static </span><span lang="en-US">block (</span>initializer<span lang="en-US">) is </span><span lang="en-US" style="background-color:lime">executed when the class</span><span lang="en-US"> that contains it </span><span lang="en-US" style="background-color:lime">is loaded</span><span lang="en-US">. The idea is that any given class is loaded at most once during a Java program&#39;s execution. Therefore, </span><span lang="en-US" style="font-family:Courier New">static </span><span lang="en-US">blocks are executed at most once. A class gets loaded the first time it is used. That generally means building an instance of it by calling a constructor, or accessing one of its </span><span lang="en-US" style="font-family:Courier New">static </span><span lang="en-US">fields or methods. Other ways are for example, getting a </span><span lang="en-US" style="font-family:Courier New">Class </span><span lang="en-US">introspection object that represents this class.</span></li>
+				<li><span lang="en-US">instance variable declaration i instance initializers redosledom kojim se nalaze u file-u.</span></li>
+				<li>konstruktor.</li>
+			</ol>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-style:italic">OCA 1Z0-808, 202. str.</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New;background-color:lime">static</span><span style="background-color:lime"> initializer-e</span> koristimo kada inicijalizacija statickog dela klase zahteva vise linija koda.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">Instance initializers</span> se koriste kada zelimo da se odredjeni kod izvrsi pre izvrsavanja konstruktora. Ono sto se u pozadini desava je da se kod iz instance initializer-a kopira na pocetak svakog konstruktora klase. Na ovaj nacin mozemo definisati kod koji je zajednicki za sve konstruktore odredjene klase. Ako imamo 2 konstruktora, pri cemu 1 konstruktor poziva 2. sa <span style="font-family:Courier New">this( … ), </span>then compiler does not copy the instance initializer code into that constructor.<span style="font-family:Courier New;background-color:red"> &lt;- </span><span style="background-color:red">CAKA.</span></p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">Razlog</span> zasto u klasi treba <span style="background-color:lime">da imamo no-args konstruktor</span>:</p>
+			<table style="border:1px solid;border-collapse:collapse">
+				<tr>
+					<td style="border:1px solid"><img alt="Superclass constructor can&#39;t be invoked compiler error 
+User() O 
+class User { 
+User(int id) { 
+class Staff extends User { 
+Staff (int id) { 
+O super(id) " width="480" height="199.5" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-d24efe5724324720982ef23f17998745!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-d24efe5724324720982ef23f17998745!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+					</td>
+				</tr>
+			</table>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Kompajler ne dodaje no-args konstruktor u <span style="font-family:Courier New">User</span> klasu jer smo mi definisali jedan konstruktor, medjutim, u klasi <span style="font-family:Courier New">Staff</span>, kompajler pokusava da ubaci <span style="font-family:Courier New">super()</span> method, ali ne moze jer ne postoji no-args konstruktor u <span style="font-family:Courier New">User</span> klasi. Zato mi moramo eksplicitno definisati no-args konstruktor ili dodati <span style="font-family:Courier New">super(id)</span> u <span style="font-family:Courier New">Staff</span> konstruktor.</p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">In general, it is a good idea to <span style="background-color:lime">always include explicit superclass calls in your constructors</span> (tj.<span style="font-family:Courier New"> super();</span>), even if it is one that the compiler could generate automatically. We consider this <span style="background-color:lime">good style</span>, because it avoids the possibility of misinterpretation and confusion in case a reader is not aware of the automatic code generation.</p>
+		</div>
+		<div style="position:absolute;left:48px;top:17280px;width:2201px">
+			<p style="margin-top:0pt;margin-bottom:0pt">xh1 <span style="background-color:lime">Paketska struktura u projektu</span></p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">Package name</span> je deo klase i ne moze se menjati a da se ne uradi i rekompajliranje klase. File-ovi koji pripadaju <span style="background-color:lime">istom paketu</span> mogu biti <span style="background-color:lime">u razlicitim folderima</span>. U tom slucaju, package name je isti za svaku klasu u paketu ali putanje do klasa mogu pocinjati u razlicitim folderima. Akcenat je na delu &quot;<span style="background-color:lime">pocinjati u razlicitim folderima</span>&quot;, odnosno klase mogu pripadati paketu <span style="font-family:Courier New">a.b </span>i biti u <span style="font-family:Courier New">dir1, dir2 </span>ili<span style="font-family:Courier New"> dir3 </span>ali u okviru ovih foldera ce se nalaziti <span style="font-family:Courier New">a/b </span>folderska struktura. Primer ovoga su testovi u Maven Java Archetype folderskoj strukturi gde testovi pripadaju istom paketu kao i klase koje se testiraju ali se nalaze u razlicitim folderima:</p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">src/main/java/com/companyName/graphics</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">src/test/java/com/companyName/graphics</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Na ovaj nacin se source logika razdvaja, a sa 2. strane i dalje mozemo pristupati package private (default) metodama i poljima klase koju testiramo.</p>
+		</div>
+		<div style="position:absolute;left:48px;top:17483px;width:1599px">
+			<p style="margin-top:0pt;margin-bottom:0pt">xh1 <span style="background-color:lime">Filter</span></p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt">Koriste se u web aplikacijama zarad izvrsavanja odredjenih akcija nad request-om/response-om, pre nego dodje do ili nakon sto ode od, akcije koja se izvrsava na serveru.</p>
+		</div>
+		<div style="position:absolute;left:48px;top:91px;width:2189px">
+			<p style="margin-top:0pt;margin-bottom:0pt">xh1 <span style="background-color:lime">General</span></p>
+			<br />
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">James Gosling</span> je tvorac Java-e.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Java je <span lang="en-US" style="background-color:lime">platform independent</span><span lang="en-US"> jezik sto znaci da 1 napisan kod mozemo izvrsavati bilo gde. Ovo je iskazano kroz moto Java-e: </span><span lang="en-US" style="background-color:lime">Write Once, Run Anywhere (WORA)</span><span lang="en-US">. Sa 2. strane C je platform dependent sto znaci da se kod kompajliran na Windows-u ne moze izvrsavati na Linux OS-u. Moramo kompajlirati source code na Linux-u da bi mogli da ga izvrsavamo na Linux OS-u, sto nije slucaj sa Java-om: kod mozemo kompajlirati na bilo kom OS-u i izvrsavati ga na nekom 2. OS-u. Kada se kaze platform dependent, ne misli se samo na OS, vec i na hardware, pa tako platform dependent jezici zavise i od arhitekture (tipa) procesora na kome se kompajliraju.</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Much of Java’s success is due to the fact that it is highly portable across multiple platforms. The bytecodes produced by Java compiler can be executed on various platforms, as long as the system has a Java Virtual Machine loaded.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-style:italic">Pogledaj i stranicu &quot;Hardware/Platform (in)dependency&quot;.</span></p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt">xh1 <span lang="en-US" style="background-color:lime">Osobine:</span></p>
+			<ol>
+				<li>Java je <span lang="en-US" style="background-color:lime">case-sensitive</span><span lang="en-US">.</span><span lang="en-US" style="font-family:Courier New;background-color:red"> &lt;- </span><span lang="en-US" style="background-color:red">VAZNO.</span></li>
+				<li><span lang="en-US" data-tag="important"><span style="background-color:lime">Statically (strongly) typed</span> jezik (tip promenljive se ne moze menjati nakon njene deklaracije). Static means that types are checked before run-time. On the other side are <span style="background-color:lime">dynamic</span> languages where types are checked on the fly, during execution. Druga osobina koja razlikuje jezike je to da li su compiled (code translated before run-time) ili interpreted (code translated on the fly, during execution). Pa je tako Java static i compiled, kao i Go npr. dok je Python dynamic and interpreted, kao i JavaScript.</span></li>
+				<li><span lang="en-US">Instance i class (<span style="font-family:Courier New">static</span>) variable dobijaju default-ne vrednosti dok <span style="background-color:lime">lokalne variable ne dobijaju default-ne vrednosti</span>.</span></li>
+			</ol>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh1 <span style="background-color:lime">Terminologija</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Paket (package)</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">One of the features of object-oriented languages that makes them powerful is that they are often accompanied by <span style="background-color:lime">class libraries</span> (biblioteke klasa). These libraries typically contain many hundreds or thousands of different classes that have proved useful to developers on a wide range of different projects. Java calls its libraries <span style="background-color:lime">packages</span>. Packages can be nested (that is, packages can contain other packages).</p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt">Na paket treba gledati kao na <span style="background-color:lime">skup klasa koje pripadaju istoj familiji</span>.</p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Library classes are used in exactly the same way as we would use our own classes.</p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">Naming conventions</span> when package name has 2 or more words:</p>
+			<ul>
+				<li><span lang="en-US">do not use hypen<span style="font-family:Courier New"> &quot;-&quot; </span>(bad practice),</span></li>
+				<li><span lang="en-US">do not use capital letters inside package names (bad practice),</span></li>
+				<li><span lang="en-US">just concatenate strings like <span style="font-family:Courier New">com.vujo.mypackage </span>(prefered),</span></li>
+				<li><span lang="en-US">use underscore<span style="font-family:Courier New"> &quot;_&quot;.</span></span></li>
+			</ul>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Legalizing package names:</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Domain Name / Package Name</p>
+			<ul>
+				<li><span lang="en-US"><span style="font-family:Courier New">hyphenated-name.example.org / org.example.hyphenated_name</span></span></li>
+				<li><span lang="en-US"><span style="font-family:Courier New">example.int / int_.example</span></span></li>
+				<li><span lang="en-US"><span style="font-family:Courier New">123name.example.com / com.example._123name</span></span></li>
+			</ul>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><a href="https://docs.oracle.com/javase/tutorial/java/package/namingpkgs.html" style="font-style:italic">https://docs.oracle.com/javase/tutorial/java/package/namingpkgs.html</a></p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Access modifiers</p>
+			<ol>
+				<li><span style="background-color:lime">Package private (default)</span> access modifier znaci da su member-i klase dostupni samo klasama (koje <span style="background-color:lime">ne moraju da budu child klase</span>) u okviru istog paketa.</li>
+				<li><span style="font-family:Courier New;background-color:lime">protected </span>access modifier znaci da su member-i dostupni u okviru istog paketa (svim ostalim klasama u tom paketu, ne samo child klasama) ali takodje i van paketa, ali samo u slucaju da se <span style="font-family:Courier New;background-color:lime">protected </span><span style="background-color:lime">member-ima pristupa UNUTAR same child klase, koja se nalazi u 2. paketu</span>. Ovaj poslednji konkretno znaci da ako imamo sledecu strukturu:</li>
+				<img width="148.5" height="182" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-51e75bf75768406b850e255ee3580d53!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-51e75bf75768406b850e255ee3580d53!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+				<br />
+				<img width="152.5" height="116.5" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-36f2f8ebe1494a25a5f9c768a1249601!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-36f2f8ebe1494a25a5f9c768a1249601!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+				<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">i ako je <span style="font-family:Courier New">Bird</span>:</p>
+				<img width="274" height="119" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-a14fd2abaf9441dbb9e643c60967950e!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-a14fd2abaf9441dbb9e643c60967950e!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+				<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">obrati paznju na deo koji se ne kompajlira, u narednom kodu:</p>
+				<img width="518" height="359.5" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-4a2407c03a824f2eab113184a178e28a!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-4a2407c03a824f2eab113184a178e28a!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+				<p lang="en-US" data-tag="idea" style="margin-top:0pt;margin-bottom:0pt">Lines <span style="font-family:Courier New">15 </span>and <span style="font-family:Courier New">16 </span>doesn&#39;t compile because, this time, a <span style="font-family:Courier New">Bird </span>reference is used. It is created on line <span style="font-family:Courier New">14</span> and since<span style="font-family:Courier New"> Bird </span>is in a different package, this code isn&#39;t inheriting from <span style="font-family:Courier New">Bird, </span>so it doesn&#39;t get to use <span style="font-family:Courier New">protected </span>members.</p>
+				<p lang="en-US" data-tag="idea" style="margin-top:0pt;margin-bottom:0pt">Even through <span style="font-family:Courier New">Swan </span>inherits from <span style="font-family:Courier New">Bird, </span>the variable reference isn&#39;t a <span style="font-family:Courier New">Swan, </span>the code just happens to be in the <span style="font-family:Courier New">Swan </span>class.</p>
+				<br />
+				<p lang="en-US" data-tag="critical" style="margin-top:0pt;margin-bottom:0pt">Keep in mind that, all methods/fields, even <span style="font-family:Courier New">private, </span>are inherited, but access modifier determine to which of these members are accessible to the inherited class.</p>
+			</ol>
+			<br />
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Objekat</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Logicka celina koja reprezentuje nesto, npr. dokument, string, file, … Objekat nudi i mogucnost manipulacije onoga sto reprezentuje koristeci metode koje su prikladne za taj objekat.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Objects have <span style="background-color:lime">state (the fields) and behaviour (the methods)</span>. </p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Simple class name</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Class name without the package. Znaci simple class name je string koji se nalazi nakon keyword-a <span style="font-family:Courier New">class </span>u definiciji klase. <span lang="en-US">A class name is an </span><span lang="en-US" style="background-color:lime">identifier</span><span lang="en-US">—a series of characters consisting of:</span></p>
+			<ol>
+				<li><span lang="en-US">letters,</span></li>
+				<li><span lang="en-US">digits,</span></li>
+				<li><span lang="en-US">underscores (<span style="font-family:Courier New">_</span>) and </span></li>
+				<li><span lang="en-US">dollar signs (<span style="font-family:Courier New">$</span>)</span></li>
+			</ol>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">that does not begin with a digit and does not contain spaces. <span style="background-color:lime">Identifier</span> moze biti <span style="background-color:lime">ime klase, promenljive ili metoda</span>.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">As of <span style="background-color:lime">Java 9</span>, you can <span style="background-color:lime">no longer use an underscore (</span><span style="font-family:Courier New;background-color:lime">_</span><span style="background-color:lime">) by itself</span> as an identifier. Notice that you can still use underscores in variable names. The only thing you cannot do is using a single underscore as an identifier. </p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Java 7 je dodala mogucnost koriscenja <span style="background-color:lime">underscore</span>-a pri definisanju <span style="background-color:lime">numerickih vrednosti</span>:</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">int x = 1_000_000;</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Ovim feature je uveden iz cisto estetskih razloga.</p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Ako klasa ima definisan paket u kome se nalazi, onda <span style="background-color:lime">naziv paketa, nakon kompajliranja, postaje deo imena klase</span> i takav naziv klase se naziva <span style="background-color:lime">fully qualified class name (FQCN)</span>. Posto je, nakon kompajliranja, naziv klase zapravo:</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">naziv paketa + naziv klase</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">to je razlog zasto, kada pokrecemo klasu, moramo navesti i ime paketa jer je to sada deo imena klase. Ako je naziv klase<span style="font-family:Courier New"> com.mds.SuperClass.class</span>, onda na CLASSPATH-u moramo imati definisanu, kao jednu od potencijalnih lokacija <span style="font-family:Courier New">.class </span>file-ova, i parent foldera <span style="font-family:Courier New">com, </span>da bi pri pokretanju ove klase, Java interpreter (JVM) mogao da nadje na toj lokaciji foldersku strukturu koja odgovara nazivu klase.<span style="font-family:Courier New;background-color:red"> &lt;- </span><span style="background-color:red">OBJASNJENJE ZASTO MORAMO DA NAVEDEMO FQCN KADA POKRECEMO KLASU.</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Literal</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">A literal is the <span style="background-color:lime">source code representation of a fixed value</span>; literals are represented directly in your code without requiring computation. As shown below, it&#39;s possible to assign a literal to a variable of a primitive type.</p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt">Naziv za <span style="background-color:lime">row data</span>:</p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">int x = 10;</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">String name = &quot;John&quot;;</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">long y = 10L</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">long y = 10</span><span style="font-family:Courier New;background-color:aqua">l</span><span style="font-family:Courier New">   </span><span style="background-color:aqua">(malo slovo L)</span></p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">A floating-point literal is of type <span style="font-family:Courier New">float </span>if it ends with the letter<span style="font-family:Courier New"> F </span>or<span style="font-family:Courier New"> f</span>; otherwise its type is <span style="font-family:Courier New">double </span>and it can optionally end with the letter<span style="font-family:Courier New"> D </span>or<span style="font-family:Courier New"> d</span>.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">The <span lang="en-GB" style="font-family:Courier New">10 </span><span lang="en-GB">and</span><span lang="en-GB" style="font-family:Courier New"> &quot;John&quot; </span>are just a values itself, called a <span style="background-color:lime">literal values</span>, because they <span style="background-color:lime">stands alone without being stored in a variable</span>.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Expression</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">Statements</span> are made up of one or more expressions.</p>
+			<p lang="en-US" data-tag="critical" style="margin-top:0pt;margin-bottom:0pt">An <span style="background-color:lime">expression</span> is any reference to a variable or value, or a set of variable(s) and value(s) combined with operators.<span style="font-family:Courier New"> &lt;- </span>OSNOVE!</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">For example:</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">a = b * 2;</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">This statement has four expressions in it:</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">• <span style="font-family:Courier New">2</span> is a <span style="background-color:lime">literal value expression</span>.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">• <span style="font-family:Courier New">b</span> is a <span style="background-color:lime">variable expression</span>, which means to retrieve its current value.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">• <span style="font-family:Courier New">b * 2</span> is an <span style="background-color:lime">arithmetic expression</span>, which means to do the multiplication.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">• <span style="font-family:Courier New">a = b * 2</span> is an <span style="background-color:lime">assignment expression</span>, which means to assign the result of the <span style="font-family:Courier New">b * 2</span> expression to the variable <span style="font-family:Courier New">a.</span></p>
+			<br />
+			<p lang="en-US" data-tag="critical" style="margin-top:0pt;margin-bottom:0pt">Statement sama po sebi ne vraca vrednost dok expression vraca.<span style="font-family:Courier New;background-color:lime"> &lt;- </span><span style="background-color:lime">SUSTINA!</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Npr. <span style="font-family:Courier New">if/else </span>petlja je statement sto znaci da<span style="font-family:Courier New"> if/else </span>petlja radi nesto, ali sama po sebi ne vraca vrednost.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Compiler</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Computers, internally, work with a <span style="background-color:lime">binary representation of a machine code (bytecode)</span>, which looks quite different from Java. The <span style="background-color:lime">compiler</span> is program whose job is to <span style="background-color:lime">translates the Java code into machine code (bytecode)</span>.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Stereotype</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Term for an annotation that encapsulates other annotations. Npr. <span style="font-family:Courier New">@Model </span>je built-in stereotype. Mogu se koristiti da bi nad klasom definisali vise interceptor-a jednom anotacijom.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Enterprise application</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Provide the business logic for an enterprise.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Business logic</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Code that fulfills the purpose of the application.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Managed Beans</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Lightweight container-managed objects (POJOs) with minimal requirements, support a small set of basic services, such as resource injection, lifecycle callbacks, and interceptors. <span style="background-color:lime">Container-managed objects</span> are:</p>
+			<ol>
+				<li>servlets,</li>
+				<li>enterprise bean, or</li>
+				<li>managed bean.</li>
+			</ol>
+			<p style="margin-top:0pt;margin-bottom:0pt">A Java EE <span style="background-color:lime">component is a bean</span> if the lifecycle of its instances may be managed by the container according to the lifecycle context model defined in the CDI specification.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Callback methods</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">User defined methods that are attached to some object&#39;s lifecycle events and are invoked automatically by container when these events occur.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Resource</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Program object that <span style="background-color:lime">provides connections to</span> such <span style="background-color:lime">systems</span> as database servers and messaging systems.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Each <span style="background-color:lime">resource object</span> is identified by a unique, people-friendly name, called the <span style="background-color:lime">JNDI name</span>. For example, the JNDI name of the preconfigured JDBC resource for the Java DB database that is shipped with GlassFish Server is <span style="font-family:Courier New">java:comp/DefaultDataSource</span>. Applications then use annotations to inject the resources. You inject resources by using the <span style="font-family:Courier New">@Resource</span> annotation in an application.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Resource adapter</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Software component that allows Java EE application components to access and interact with the underlying resource manager of the EIS. Because a resource adapter is specific to its resource manager, a different resource adapter typically exists for each type of database or enterprise information system (EIS). </p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Web module</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Smallest deployable and usable unit of web resources. A web module contains web components and static web content files, such as images, which are called <span style="background-color:lime">web resources</span>. Web module corresponds to a <span style="background-color:lime">web application</span>.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Object state</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">The state of an object consists of the <span style="background-color:lime">values of its instance variables</span>.</p>
+			<p data-tag="important" style="margin-top:0pt;margin-bottom:0pt">Generalno govoreci vrednosti koje se nalaze u promenljivama predstavljaju state bilo to objekta, programa ili neceg drugog u cemu su te promenljive definisane.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Helper class / <span lang="en-US">Utility class</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt">U Java-i je treba koristiti &quot;utility class&quot; naziv za ovakve klase.</p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt">Klase sa reusable <span style="font-family:Courier New;background-color:lime">static </span><span style="background-color:lime">metodama</span>.</p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt">Nuzno zlo u Java-i, posto ne postoji nacin da se reuse-uju funkcije van klase.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Pri kreiranju utility klasa t<span lang="en-US">reba paziti na barem 2 stvari:</span></p>
+			<ul>
+				<li><span lang="en-US">da li je u pitanju stvarno re-usable funkcionalnost, u suprotnom je treba pripojiti postojećoj klasi koja se bavi baš time i koristiti instance metode a ne <span style="font-family:Courier New">static</span>.</span></li>
+				<li><span lang="en-US">ne stavljati sve u jednu helper klasu, već praviti više helper klasi po separation of concerns i package principima. Ako je struktura organizovana na osnovu domena, onda videti da li klasa pripada jednom domenu i staviti je tu, ako ne prebaciti i <span style="font-family:Courier New">shared </span>folder koji se bavi svim i svačim.</span></li>
+			</ul>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Coarse-grained object</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Contains more data than a fine-grained one.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Batch (serija, gomila) jobs</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Tasks that can be executed without user interaction. These tasks are executed periodically or when resource usage is low, and they often process large amounts of information such as log files, database records, or images. Examples include billing, report generation, data format conversion, and image processing.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">The batch framework consists of a job specification language based on XML, a set of batch annotations and interfaces for application classes that implement the business logic, a batch container that manages the execution of batch jobs, and supporting classes and interfaces to interact with the batch container.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Batch processing</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Refers to running batch jobs on a computer system.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span style="font-family:Courier New">bin </span>folder</p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">Contains both the compiler and the launcher.</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">xh2 Serialize</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">This means to convert object state to a byte stream so that the byte stream can be reverted back into a copy of the object. Deserialization is the process of converting the serialized form of an object back into a copy of the object.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Compiling</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Process of translating source code (the human-readable description of a program written by a programmer) into the native language of the computer’s processor. It is done with program called a <span style="background-color:lime">compiler</span>. Na ovaj nacin se build-uju programi.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Interoperability</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Way to enable disparate (razlicit) software applications to work together.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Truncation</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Casting a floating-point value to an integer value may introduce truncation errors (loss of the fractional part) into the result.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Local variable</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">It&#39;s declarations</span> look similar to field declarations, but they <span style="background-color:lime">never have </span><span style="font-family:Courier New;background-color:lime">private </span><span style="background-color:lime">or </span><span style="font-family:Courier New;background-color:lime">public</span> as part of them.</p>
+			<p lang="en-US" data-tag="idea" style="margin-top:0pt;margin-bottom:0pt">Local variables must be initialized before they are used in an expression—they are not given a default value.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Method signature</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Combination of the <span style="background-color:lime">method&#39;s name and the number, types and order of its parameters</span>, but <span style="background-color:red">NOT its return type</span>.<span style="font-family:Courier New;background-color:red"> &lt;- </span><span style="background-color:red">OBRATI PAZNJU.</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Overload methods</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Methods of the same name can be declared in the same class, as long as they have different sets of parameters (determined by the number, types and order of the parameters).</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Override methods (redefinition of methods)</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Potpuno isti metodi sa razlicitim implementacijama. Pravila pri override-ovanju metoda:</p>
+			<img alt="Rule 1: Same parameters + compatible return types 
+Return type must be same or subclass type 
+Incompatible return type compiler error 
+Rule 2: Can&#39;t be less accessible 
+Access level must be same or friendlier " width="575" height="207.5" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-84c7661f65ce0d162b37935bac3e6908!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-56e9436ceb59013230f79eeba9ede9d9!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">Staticki metodi se ne mogu override-ovati, vec se samo mogu hide-ovati.</span> Ovo ne znaci da child klasa ne moze definisati staticki metod koji ima isti signature kao staticki metod parent klase vec znaci da ce se uvek pobuditi staticki metod reference type-a jer kompajler radi early binding i definise u bytecode-u i signature ali i implementaciju metoda koji ce se koristiti tako da, kada JVM dodje do statickog metoda u kodu, on nema sta da razmislja vec samo izvrsi definisani staticki metod a to je zapravo staticki metod definisan u reference type-u. Ako zelimo da iz child objekta, koji hide-uje staticki metod parent objekta, pristupimo statickom metodu parent-a onda koristimo <span style="font-family:Courier New">ParentClassName.staticMethodName(). </span><span style="background-color:lime">Ne mozemo koristiti </span><span style="font-family:Courier New;background-color:lime">super</span><span style="background-color:lime"> keyword</span> jer <span style="font-family:Courier New">super</span> predstavlja objekat a staticki metodi zahtevaju klasu.</p>
+			<br />
+			<p lang="en-US" data-tag="idea" style="margin-top:0pt;margin-bottom:0pt">Contrary to the rule for <span style="font-family:Courier New">super() </span>call in constructors, the <span style="font-family:Courier New">super </span>call in methods may occur anywhere within that method. It does not have to be the first statement.</p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Kao posledicu override-ovanja metoda imamo <span style="background-color:lime">method polymorphism</span> (polymorphic method dispatch): method calls in Java are polymorphic. The same method call may at different times invoke different methods, depending on the dynamic type (zavisno od objekta na koji promenljiva ukazuje) of the variable used to make that call.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Argumenti vs parametri</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="color:#231f20;background-color:lime">Argumenti</span><span style="color:#231f20"> se </span><span style="color:#231f20;background-color:lime">prosledjuju</span><span style="color:#231f20"> funkciji (imaju vrednost) dok su </span><span style="color:#231f20;background-color:lime">parametri promenljive</span><span style="color:#231f20"> koje se koriste u funkciji. To su zapravo 2 strane istog novcica.</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Hiding fields</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="color:#231f20">When you hide a variable, you define a variable with the same name as a variable in a parent class. Kada se </span><span style="color:#231f20;background-color:lime">hide-uje polje, nije bitan tip polja</span><span style="color:#231f20">, bitno je samo da imena polja budu ista.</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">Reference type determines which particular value of hiden field is used. </span><span style="font-family:Courier New;background-color:red">&lt;-</span><span style="background-color:red"> OBRATI PAZNJU.</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-style:italic">Knjiga za 1Z0-808 exam, 257. str.</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Pass-by-reference or pass-by-value</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">In Java all arguments are <span style="background-color:lime">passed by value, always</span>. A method call can pass two types of values to a method—<span style="background-color:lime">copies of primitive values</span> (e.g., values of type <span style="font-family:Courier New">int </span>and <span style="font-family:Courier New">double</span>) and <span style="background-color:lime">copies of references to objects</span>. U oba slucaja se vrsi pass-by-value.</p>
+			<img alt="Primitives in Memory 
+int id = 1000; 
+id -Y &lt;logical name, memory address, value> 
+id 
+81921 
+1000 
+Memory " width="271.5" height="169" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-6520c888ab9f00bb0275c55423cace2e!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-6520c888ab9f00bb0275c55423cace2e!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<br />
+			<img alt="Object References in Memory 
+Students = new Student(); 
+85411 
+81921 
+85411 
+Memory " width="270.5" height="167" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-e5d63a02f2fc08322480d1d603674da9!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-e5d63a02f2fc08322480d1d603674da9!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Zbog nacina na koji se primitive i reference cuvaju u memoriji, kada se argumenti passed by value, <span style="background-color:lime">u slucaju primitiva, ta value je vrednost primitive</span> dok je <span style="background-color:lime">u slucaju referenci ta value memorijska adresa objekta</span>. Zato kada dodeljujemo primitivu 2. promenljivi, promena 2. promenljive nece uticati na vrednost u 1 jer ce 2. primitiva imati svoju kopiju vrednosti. Dok u slucaju referenci, posto ce 2. referenca dobiti kopiju memorijske adrese objekta, sve promene koje 2. referenca ucini nad objektom, <span style="background-color:lime">tj. UNUTAR objekta</span>, koji joj je dodeljen, ce biti vidljive i kroz 1. referencu jer obe reference imaju isti vrednost, tj. memorijsku adresu i ukazuju na isti objekat.<span style="font-family:Courier New;background-color:red"> &lt;- </span><span style="background-color:red">OBRATI PAZNJU.</span></p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">JS koristi isti princip</span> kao i Java. JS primer:</p>
+			<img alt="var foo = 
+{&#39;bar&#39;: I}; 
+function tryToMungeReference (obi) { 
+obi = 
+{&#39;bar&#39;: 2}; 
+// won&#39;t change caller&#39;s object 
+function mungeContents (obi) { 
+obi. bar = 2; 
+// changes 
+contents 
+of caller&#39;s object 
+t y TomungeRefe pence ( foo) ; 
+foo.bar — 
+// true 
+mungeContents(foo) ; 
+foo . bar 
+// true - 
+foo still references original object 
+object referenced by foo has been modified " width="493" height="256" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-852e72f9a089072335b7b8b625813737!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-852e72f9a089072335b7b8b625813737!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Dodelom novog objekta bilo kojoj od 2 reference, koje su ukazivale na isti objekat, prestaje da postoji bilo kakva zavisnost ove 2 reference, kao sto je prikazano u <span style="background-color:lime">1. funkciji</span>.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Inheritance</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">Conflict resolution strategies</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Rules for how implementation inheritance work:</p>
+			<ol>
+				<li><span lang="en-US"><span style="background-color:lime">Classes win over interfaces.</span>  If a class in the superclass chain has a declaration for the method (concrete or abstract), you&#39;re done, and defaults (from interface) are irrelevant.</span></li>
+				<li><span lang="en-US"><span style="background-color:lime">More specific interfaces win over less specific ones</span> (where specificity means &quot;subtyping&quot;).  A default from <span style="font-family:Courier New">List</span> wins over a default from <span style="font-family:Courier New">Collection</span>, regardless of where or how or how many times <span style="font-family:Courier New">List</span> and <span style="font-family:Courier New">Collection</span> enter the inheritance graph.</span></li>
+				<li><span lang="en-US">If there is not a unique winner according to the above rules, concrete classes must disambiguate manually.</span></li>
+			</ol>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Ovo su pravila koja uvek treba da imamo na umu kada zakljucujemo koji metod ce se naslediti u odredjenom slucaju (kada klasa implementira interface sa npr. <span style="font-family:Courier New">default-nim </span>metodama i ekstenduje (apstraktnu) klasu).<span style="font-family:Courier New;background-color:red"> &lt;- </span><span style="background-color:red">VAZNO.</span></p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Par napomena vezaih za <span style="font-family:Courier New">default-ne </span>metode u interface-u:</p>
+			<ul>
+				<li><span lang="en-US"><span style="font-family:Courier New">default-ni </span>metodi ne mogu override-ovati metode iz <span style="font-family:Courier New">Object </span>klase.</span></li>
+				<li><span lang="en-US">kada se eksplicitno poziva <span style="font-family:Courier New">default-ni </span>metod iz interface-a, koristi se <span style="font-family:Courier New">super </span>keyword u obliku: <span style="font-family:Courier New;background-color:lime">InterfaceName.super.defaultMethodName()</span><span style="font-family:Courier New">;</span>. Moze se pozivati samo interface koji klasa direktno implementira, ne i grandparent interface.</span></li>
+				<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-style:italic">Primer koda Examples/defaultMethods u Test environment folderu.</span></p>
+				<li><span lang="en-US">ne mogu se koristiti <span style="font-family:Courier New">final</span> i <span style="font-family:Courier New">synchronized</span> keywords uz <span style="font-family:Courier New">default-ne</span> metode.</span></li>
+			</ul>
+			<br />
+			<p lang="en-US" data-tag="important" style="margin-top:0pt;margin-bottom:0pt">We can inherit<span style="font-family:Courier New"> static </span>methods.</p>
+			<br />
+			<p lang="en-US" data-tag="important" style="margin-top:0pt;margin-bottom:0pt">We call the declared type of the variable the <span style="background-color:lime">static type</span>, because it is declared in the source code—the static representation of the program.</p>
+			<p lang="en-US" data-tag="important" style="margin-top:0pt;margin-bottom:0pt">We call the type of the object stored in a variable the <span style="background-color:lime">dynamic type</span>, because it depends on assignments at runtime—the dynamic behavior of the program.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">Vehicle v1 = new Car();</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">The static type of<span style="font-family:Courier New"> v1 </span>is<span style="font-family:Courier New"> Vehicle, </span>the dynamic type of<span style="font-family:Courier New"> v1 </span>is<span style="font-family:Courier New"> Car</span>.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">For type checking, the static type is used. The dynamic type is often only known at runtime, so the compiler has no other choice but to use the static type if it wants to do any checks at compile time.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Compile-time (compiletime) dependency</span></p>
+			<p lang="en-US" data-tag="critical" style="margin-top:0pt;margin-bottom:0pt">Compiletime dependencies are only the dependencies (other classes) which you use <span style="background-color:lime">DIRECTLY</span> in the class you&#39;re compiling.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Compiletime dependencies are dependencies that we need on our <span style="font-family:Courier New">CLASSPATH </span>in order to compile artifact.</p>
+			<br />
+			<p lang="en-US" data-tag="important" style="margin-top:0pt;margin-bottom:0pt">Java doesn&#39;t actually link anything at compile time. It only verifies the syntax using the matching classes it finds in the <span style="font-family:Courier New">CLASSPATH</span>. It&#39;s not until runtime that everything gets put together and executed based on the <span style="font-family:Courier New">CLASSPATH</span> at that time.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Runtime dependency</span></p>
+			<p lang="en-US" data-tag="critical" style="margin-top:0pt;margin-bottom:0pt">Runtime dependencies covers both the<span style="background-color:lime"> DIRECT and INDIRECT</span> dependencies of the class you&#39;re running.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Runtime dependencies are dependencies that we need on our <span style="font-family:Courier New">CLASSPATH </span>in order to run artifact.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Thus, runtime dependencies includes dependencies of dependencies and any reflection dependencies like classnames which you have in a <span style="font-family:Courier New">String, </span>but are used in <span style="font-family:Courier New">Class#forName()</span>.￼</p>
+			<p lang="en-US" data-tag="important" style="margin-top:0pt;margin-bottom:0pt">Runtime dependency is more related with the <a href="onenote:OOP.one#OO%20concepts&amp;section-id={9EAA0122-D3CA-4CFE-84D0-8B0771B4DB56}&amp;page-id={BD124AF7-14EC-47DA-9648-C19851B58DC5}&amp;object-id={AE01C8C3-BD8A-0BF1-0C45-5D5EFEC96240}&amp;71&amp;base-path=https://d.docs.live.net/9f971ac3eb8340c4/Documents/OneNote%202016/Programiranje">actual flow-of-control</a>.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Polymorphism (&quot;many shapes&quot;)</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Property of an object to take on many different forms.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">To put this more precisely, a Java object may be accessed using a reference with the same type as the object, a reference that is a superclass of the object, or a reference that defines an interface the object implements, either directly or through a superclass. So <span style="background-color:lime">reference type and actual object type can be different</span>. This is why variables holding object types in Java are <span style="background-color:lime">polymorphic variable</span>. Furthermore, a cast is not required if the object is being reassigned to a super type or interface of the object.</p>
+			<p lang="en-US" data-tag="critical" style="margin-top:0pt;margin-bottom:0pt">So, a <span style="background-color:lime">variable can hold objects of its declared type or of any subtype of its declared type</span>. This principle is known as <span style="background-color:lime">substitution</span><span style="font-family:Courier New"> - </span>we can substitute a subclass object where a superclass object is expected, because the subclass object is a special case of the superclass.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">Superclass</span> se cesto naziva i <span style="background-color:lime">supertype</span> ili <span style="background-color:lime">base class</span> dok se <span style="background-color:lime">subclass</span> cesto naziva <span style="background-color:lime">subtype</span> ili <span style="background-color:lime">derived class</span>.</p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Kompajler koristi<span style="background-color:lime"> reference type</span> da bi odredio <span style="background-color:lime">koji metodi se mogu pozivati</span> nad objektom dok sa 2. strane <span style="background-color:lime">JVM</span> koristi <span style="background-color:lime">object type</span> da bi odlucio <span style="background-color:lime">koji tacno metod da pozove</span>. JVM ce uvek pozvati najspecificniju verziju metoda, pocevsi od object type-a i iduci ka parent objektima:<span style="font-family:Courier New;background-color:red"> &lt;- </span><span style="background-color:red">OBRATI PAZNJU. MNOGO VAZNO.</span></p>
+			<img alt="available 
+EmailAdmin 
+handleEmailCampaign() 
+User 
+saveWebLink() 
+saveMovie() 
+saveBook() 
+rateBookmark() 
+ostAReview 
+Staff 
+postAReview() 
+User user = new Editor(); 
+user.postAReview(); 
+Editor 
+approveReview() 
+rejectReview() 
+ChiefEditor 
+updateHomepage() " width="584" height="365" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-2820b86cd9090fca11892dde014fceaa!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-8be35f907e160a100b8c646cc6965539!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">Method binding (method lookup or method dispatch)</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Rekli smo da kompajler koristi reference type da bi odredio koji metodi mogu da se pozovu nad odredjenom referencom, dok JVM koristi object type da bi odredio koju implementaciju tog metoda treba pozvati. Ovaj proces se zove method binding. Pored instance metoda, method binding se vrsi i za staticke metode, tj. za svaki metod. <span style="background-color:lime">Definicija</span> method binding-a je: povezivanje method call-a sa <span style="background-color:lime">odgovarajucom deklaracijom metoda</span> kao i sa <span style="background-color:lime">odgovarajucom implementacijom</span> te deklaracije. Method binding se deli na 2 dela:</p>
+			<ol>
+				<li><span lang="en-US"><span style="background-color:lime">method signature binding</span> i</span></li>
+				<li><span lang="en-US"><span style="background-color:lime">method implementation binding</span>.</span></li>
+			</ol>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Method signature binding se sastoji od sledeceg:</p>
+			<ol>
+				<li><span lang="en-US">Kada kompajler naidje na method invocation statement, on proverava da li <span style="background-color:lime">tip reference</span>, nad kojom se metod poziva, <span style="background-color:lime">sadrzi kompatibilan metod</span>, tj. da li postoji metod koji ima iste ili kompatibilne parametre.</span></li>
+				<li><span lang="en-US">Ako kompajler pronadje takav metod onda on upisuje <span style="background-color:lime">signature tog metoda u bytecode</span>. Ako ne nadje, onda dobijemo compiler error. Ova logika se primenjuje na sve metode (i instance i <span style="font-family:Courier New">static</span>). Znaci u svakom slucaju se signature metoda upisuje u bytecode tokom kompajliranja (malo redundantna recenica jer naravno da se upisuje tokom kompajliranja, ne postoji 2. trenutak kad bi nesto moglo da se upise u bytecode ako ne tokom kompajliranja).</span></li>
+			</ol>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Nakon ovoga treba doneti odluku koju <span style="background-color:lime">konkretnu implementaciju metoda</span> treba izvrsiti tokom runtime-a. Ovu odluku moze doneti ili compiler ili JVM zavisno od tipa metoda. Ako je u pitanju <span style="font-family:Courier New;background-color:lime">static </span>metod onda <span style="background-color:lime">odluku donosi kompajler</span> na osnovu tipa reference dok u slucaju <span style="background-color:lime">instance</span> metoda <span style="background-color:lime">odluku donosi JVM</span> na osnovu tipa objekta. JVM polazi od objekta trazeci 1. metod koji zadovaljava signature iz bytecode-a. Posto se odluka o tome koji staticki metod ce se izvrsti donosi tokom kompajliranja ovo se zove <span style="background-color:lime">compile-time ili early binding</span>. Sa 2. strane, u slucaju instance metoda imamo <span style="background-color:lime">runtime ili late binding (dynamic binding)</span>. Late binding je karakteristican za override-ovane metode.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">U slucaju <span style="background-color:lime">polja objekta</span>, primenjuje se <span style="background-color:lime">early binding</span> na osnovu tipa reference.</p>
+			<img alt="Method Type 
+Non-Static 
+Static 
+Compile-time Binding 
+Runtime Binding 
+Method Signature 
+Method Signature 
+Method Implementation 
+Method Implementation " width="511" height="107.5" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-8604eab8b1ab064d3f61ad365aa99992!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-8604eab8b1ab064d3f61ad365aa99992!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Da bi videli koji metod je kompajler izabrao (set-ovao u bytecode), koristimo <span style="font-family:Courier New;background-color:lime">javap </span>tool kojim citamo sadrzaj bytecode-a, tj.<span style="font-family:Courier New"> .class </span>file-ova.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-style:italic">Obavezno pogledati: Obuka &quot;Udemy/Java in depth/Section 8/115. ep.&quot; + &quot;Method Binding&quot; u Obuke/Java/Udemy/Java in depth/Dokumentacija + primer koda &quot;Examples/methodBinding&quot;.</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Ako imamo kod:</p>
+			<p lang="en-US" data-tag="idea" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">v1.display();</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">when this statement executes, the <span style="font-family:Courier New">display() </span>method is invoked in the following steps:</p>
+			<ol>
+				<li><span lang="en-US" data-tag="idea">The variable<span style="font-family:Courier New"> v1 </span>is accessed.</span></li>
+				<li><span lang="en-US" data-tag="idea">The object stored in that variable is found (following the reference).</span></li>
+				<li><span lang="en-US" data-tag="idea">The class of the object is found (following the<span style="font-family:Courier New"> instance of </span>reference).</span></li>
+				<li><span lang="en-US" data-tag="idea">The implementation of the <span style="font-family:Courier New">display </span>method is found in the class and executed.</span></li>
+			</ol>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Zbog ove procedure <span style="background-color:lime">JVM polazi od objekta</span> trazeci 1. metod koji zadovoljava signature iz bytecode-a. Ova procedura se primenljuje uvek bez obzira da li su static type i dynamic type isti ili se koristi polimorfizam ili je pak metod override-ovan.</p>
+			<p lang="en-US" data-tag="idea" style="margin-top:0pt;margin-bottom:0pt">Ovo objasnjava zasto se u slucaju override-ovanog metoda izvrsava metod u child klasi cak iako je static type (tip reference) parent klasa.</p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Ako zelimo <span style="background-color:lime">da sprecimo inheritance</span>, onda mozemo koristiti <span style="font-family:Courier New">final</span> keyword na nivou klase. I dalje cemo moci da kreiramo objekat ove klase. Drugi nacin je da definisemo <span style="font-family:Courier New">private</span> konstruktor, medjutim u ovom slucaju se nece moci kreirati instanca ove klase a samim tim se ista nece moci ni <span style="font-family:Courier New">extend-ovati</span>. Ovaj pristup je dobar kada imamo samo staticke metode u klasi, tj. kada je u pitanju utility klasa, or the class wants to control all calls to create new instances of itself.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">No-op</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">No operation.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Immutability</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Techniques for not modifying the data source being processed or any other program state.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Immutable data</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Data that will not change. With shared immutable data it’s not possible for a thread to see old or incorrect values as a result of another thread’s manipulation of that data.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Immutable classes</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Those <span style="background-color:lime">class, whose object can not be modified once created</span>, it means any modification on immutable object will result in another immutable object. Rules to make a class immutable:</p>
+			<ol>
+				<li><span lang="en-US">State of immutable object can not be modified after construction, any modification should result in new immutable object.</span></li>
+				<li><span lang="en-US">All fields of immutable class should be <span style="font-family:Courier New;background-color:lime">final</span>. Napomena je da <span style="font-family:Courier New">final </span>polja <span style="background-color:lime">ne dobijaju default-nu vrednost</span>, odnosno moramo ih rucno inicijalizovati tokom deklaracije ili u instance ili <span style="font-family:Courier New">static </span><span lang="en-GB">initializer</span>-u ili u konstruktoru.</span></li>
+				<li><span lang="en-US">Object must be properly constructed i.e. object reference must not leak during construction process.</span></li>
+				<li><span lang="en-US">Object should be <span style="font-family:Courier New">final </span>in order to restrict sub-class for altering immutability of parent class (to prevent subclasses from overriding methods, which can compromise immutability).</span></li>
+				<li><span lang="en-US">Ako neko polje immutable objekta ukazuje na mutable objekat i ako to polje treba da bude dostupno i izvan objekta onda, svaki put kada neko trazi vrednost tog polja, treba mu vratiti <span style="background-color:lime">kopiju mutable objekta</span> na koje polje ukazuje (to prevent the risk of malicious client modifying mutable reference after getting it - <a href="onenote:#Just%20language&amp;section-id={2C59F4F1-88C2-4BAE-B7CD-F075B944BAA5}&amp;page-id={EBA4C1BA-C2B2-4E23-8876-EEBCFA624D70}&amp;object-id={09C0EDB4-5083-0AFA-157D-BA8AAA0D6270}&amp;B&amp;base-path=https://d.docs.live.net/9f971ac3eb8340c4/Documents/OneNote%202016/Programiranje/Java.one">reference leak</a>).</span></li>
+			</ol>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Immutable objects are by default <span style="background-color:lime">thread safe</span>, can be shared without synchronization in concurrent environment. Ovo dosta pojednostavljuje kod.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Mutable data</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Data that may change during its lifetime.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Erasure</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">When the compiler translates some generic method into Java bytecodes, it removes the type-parameter section and replaces the type parameters with actual types. This is called erasure.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Wrapper class</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">This allows one to wrap an existing class instance and selectively override methods. Implementira decorator pattern.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Autoboxing and unboxing</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Compiler uses <span style="font-family:Courier New;background-color:lime">valueOf() </span>method to convert <span style="background-color:lime">primitive to </span><span style="font-family:Courier New;background-color:lime">Object </span>and uses <span style="font-family:Courier New;background-color:lime">intValue(), doubleValue(), </span><span style="font-family:Courier New;background-color:lime">…</span> to get <span style="background-color:lime">primitive value from </span><span style="font-family:Courier New;background-color:lime">Object</span>. Obrati paznju na sledeci kod:</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">Integer num1 = 1;</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">int num2 = 1;</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">System.out.println(&quot;num1 == num2 : &quot; + (num1 == num2));</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Ispis ce biti <span style="font-family:Courier New">true, </span>ali ce se 1. desiti <span style="background-color:lime">autoboxing</span> da bi se 1-ca prevela u objekat <span style="font-family:Courier New">num1</span>, a onda <span style="background-color:lime">kada poredimo </span><span style="font-family:Courier New;background-color:lime">Integer </span><span style="background-color:lime">i </span><span style="font-family:Courier New;background-color:lime">int</span>, desice se unboxing i <span style="background-color:lime">dobicemo poredjenje 2 </span><span style="font-family:Courier New;background-color:lime">int-a </span>i to ce vratiti <span style="font-family:Courier New">true</span>. Ovo moze izazvati <span style="font-family:Courier New">NullPointerException </span>ako je object referenca<span style="font-family:Courier New"> null</span>. Autoboxing se desava kada primitivu dodeljujemo object referenci kao npr.:</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">Integer num1 = 1;</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">ali se <span style="background-color:lime">autoboxing ne desava</span> kada object referenci dodeljujemo 2. objekat ili koristimo konstruktor:</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">Integer num1 = new Integer(1);</span><span style="font-family:Courier New;background-color:red"> &lt;- </span><span style="background-color:red">OBRATI PAZNJU.</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Whenever a value of a primitive type is used in a context that requires a wrapper type, the compiler automatically wraps the primitive-type value in an appropriate wrapper object. Autoboxing is also applied whenever a primitive-type value is passed as a parameter to a method that expects a wrapper type and when a primitive-type value is stored in a wrapper-type variable. Similarly, unboxing is applied when a wrapper-type value is passed as a parameter to a method that expects a primitive-type value and when stored in a primitive-type variable.</p>
+			<br />
+			<img alt="&amp; != -Y identity comparison 
+>= -Y auto-unboxing " width="318" height="56.5" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-bc350cc7b5700bbb2f9a52b59f34547f!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-bc350cc7b5700bbb2f9a52b59f34547f!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Kada se koriste operatori jednakosti onda se radi poredjenje referenci dok u slucaju operatora nejednakosti se vrsi unboxing i poredjene vrednosti wrapper objekata.</p>
+			<img alt="Unwrap (Boxed to Primitive) 
+int i = (new Integer(25)).intVaIue(); 
+Parsing Strings 
+&lt;orderld>25&lt;/orderld> 
+To primitive: int i = Integer.parseInt(&quot;25&quot;); 
+To boxed: Integer i = Integer.vaIueOf(&quot;25&quot;); // simple factory 
+To string 
+String s = Integer.toString(25); 
+Wrap: Integer.valueOf(int) better performance!! " width="441" height="192" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-57241d53180809e22a3f0f65b811fc3c!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-5fce7c1f580b085b38ae1be13291d304!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New;background-color:lime">valueOf() </span>je naming konvencija za metode koji <span style="background-color:lime">kreiraju objekte</span>.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-style:italic">Pogledaj i &quot;Operators/==&quot;.</span></p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Each primitive types in Java have its corresponding class called a <span style="background-color:lime">wrapper class</span> which represents that primitive in object world. <span style="background-color:lime">Each wrapper class is capitalized according to Java&#39;s class naming convention and lengthened to its full name.</span> So, <span style="font-family:Courier New">int </span>becomes <span style="font-family:Courier New">Integer, char </span>becomes <span style="font-family:Courier New">Character, </span>and <span style="font-family:Courier New">boolean </span>becomes <span style="font-family:Courier New">Boolean, </span>for example.</p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">Autoboxing nije podrzan za array-ove</span>, sto znaci da je sledeci izraz nelegalan:</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">Integer[] items = new int[]{1, 2};</span></p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Escape sequence</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">To je karakter ispred koga stoji \.</p>
+			<img alt="1&quot; double quote (not required in char literal) 
+single quote 
+(not required in String literal) 
+\n — new line 
+\t - tab 
+— backslash 
+\r carriage return 
+\b — backspace 
+\f formfeed 
+char c = 
+&#39;\u0041 " width="414" height="211" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-8039dd402da207fa043633ebc6623059!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-8039dd402da207fa043633ebc6623059!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">NaN</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="text-decoration:line-through">Not-a-Number</span>, invalid number</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">NaN is produced if a floating point operation has some input parameters that cause the operation to produce some undefined result. For example, 0.0/0.0 is arithmetically undefined. Taking the square root of a negative number is also undefined. Definise se konstantom <span style="font-family:Courier New">Double.NaN</span>. NaN has the interesting property of being the only &quot;number&quot; which is not the same as itself when compared. Therefore a common test if a number <span style="font-family:Courier New">x </span>is NaN is the following:</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">boolean isNaN(x){</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">return x != x;</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">}</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Constant variable</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Promenljive se evaluiraju tokom runtime-a. Medjutim <span style="background-color:lime">constant variable</span> su poseban tip &quot;promenljivih&quot; cija je vrednost poznata tokom compile time-a sto znaci da ne moramo da cekamo do runtime-a da bi znali koja im je vrednost. Zbog ovoga se ove &quot;promenljive&quot; nazivaju i compile-time konstante. Primer je:</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">public static final double PI = 3.141592653589793;</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">promenljiva iz <span style="font-family:Courier New">Math </span>klase. Prednost toga sto znamo vrednost ove promenljive tokom compile time-a je u tome sto kompajler moze uzeti tu vrednost i zameniti je na svim mestima gde se koristi ta promenljiva sto smanjuje runtime overhead jer JVM ne mora da trazi vrednost ove promenljive i da je menja na mestima gde se promenljiva javlja. Pa ce tako izraz <span style="font-family:Courier New">double x = Math.PI; </span>postati <span style="font-family:Courier New">double x = 3.141592653589793; </span>i novodobijeni kod ce se sacuvati u <span style="font-family:Courier New">.class </span>file-u.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Constant variable je <span style="font-family:Courier New">final </span>promenljiva uz dodatna ogranicenja:</p>
+			<img alt="final 
+primitive or String 
+Initialized in declaration statement 
+Initialized with compile-time constant expression " width="392" height="99.5" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-a36c9dfc95ef05cf336e52f7c2022e83!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-bf3a095bbeb808bd272ccd5b1f35e73f!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Constant expression je izraz cija je vrednost poznata tokom compile-time-a pa se zato i naziva compile-time constant expression. Primeri constant promenljvih:</p>
+			<img alt="final int x = 23; 
+final String x = &quot;hello&quot;; 
+final int x = 23 + 5; 
+final String x = &quot;hello &quot; + &quot;world!&quot;; 
+final int z = 5; 
+final int x = 23 + z; // z is hard-wired " width="355" height="177.5" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-ab69d605da900867028058fee19028ce!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-ab69d605da900867028058fee19028ce!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Medutim u izrazu:</p>
+			<img alt="int z = 5; 
+final int x = 
+23 + z; " width="167" height="50" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-24cac45eeea100cb030ad0d1b625dc3d!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-24cac45eeea100cb030ad0d1b625dc3d!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">x </span>nije constant promenljiva jer je vrednost <span style="font-family:Courier New">z </span>promenljive nepoznata do runtime-a. Takodje u izrazu <span style="font-family:Courier New">final int x = getVal(); x </span>nije konstant promenljiva jer se metod poziva tokom runtime-a. U narednom kodu:</p>
+			<img alt="public class Test { 
+final int x; 
+public Test () { 
+x = 23; " width="159" height="153" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-6628618cd8f20c87288e734620c78dd1!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-6628618cd8f20c87288e734620c78dd1!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">x </span>nije constant promenljiva jer nije inicijalizovan tokom deklaracije. Pored toga <span style="background-color:lime">konstruktor se poziva samo tokom runtime-a</span>. Slicno:</p>
+			<img alt="public class Test { 
+static final int x; 
+static { 
+x = 23; " width="158" height="156" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-701e45af50b5037212f72b11ad9c4892!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-701e45af50b5037212f72b11ad9c4892!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">x </span>nije constant promenljiva jer je nije inicijalizovan tokom deklaracije. Takodje <span style="font-family:Courier New;background-color:lime">static </span><span lang="en-GB" style="background-color:lime">initialization </span><span style="background-color:lime">blok se izvrsava samo tokom runtime-a</span>, kada se klasi pristupa 1. put, let&#39;s say by creating an instance of it or by invoking one off its static members, then JVM just loads the class into memory and then it executes its <span style="font-family:Courier New">static </span>initialize block at which time the variable is initialized.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Mixin</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Posebna vrsta interface-a koji daju odredjene dodatne mogucnosti klasi koja ih implementira. Ovi interface-i se obicno zavrsavaju na <span style="font-family:Courier New">&quot;…able</span>.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Skeletal implementation</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Klasa koja predstavlja osnovnu implementaciju odredjenog interface-a. Obicno se koriste <span style="background-color:lime">apstraktne klase</span> za skeletal implementaciju. Ove klase se obicno nazivaju <span style="font-family:Courier New">Abstract</span><span style="font-family:Courier New;font-style:italic">InterfaceName</span>, npr. <span style="font-family:Courier New">AbstractList.</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Binary compatibility</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Means that when something is updated, you continue to work without needing to even recompile. Odnosno kada promenimo 1 klasu ne moramo da rekompajliramo i klase koje je koriste.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Ovo je moguce ako menjamo samo <span style="font-family:Courier New">private </span>ili package private clanove klase jer ostale klase nemaju pristup ovim poljima. U tom slucaju je dovoljno samo da rekompajliramo klasu koju smo menjali.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Medjutim ako menjamo <span style="font-family:Courier New">public </span>ili <span style="font-family:Courier New">protected </span>metode onda cemo, pored klase koju menjamo, morati da rekompajliramo i klase koje je koriste, tj. klijente.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh3 <span lang="en-US" style="background-color:lime">Primer</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Ako imamo interface:</p>
+			<img alt="public interface Cultist { 
+public String chant(); " width="182" height="73" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-bec43babac0e06043e556fdaa9aa1ef3!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-bec43babac0e06043e556fdaa9aa1ef3!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">i njegovu implementaciju:</p>
+			<img alt="public class CthuIhuCuItist implements Cultist{ 
+public String chant() 
+return &quot;la! C thulhu R &#39;lyeh&quot;; 
+ride 
+public String toString() 
+return &#39; &#39;Cthulhu cultist&quot;; " width="321" height="178" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-5b6637ecc6280cd11a760c7127b23574!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-5b6637ecc6280cd11a760c7127b23574!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">i servis koji koristi ovu klasu:</p>
+			<img alt="public class CultistService { 
+static public String getChant(CthuIhuCuItist cultist) { 
+return cultist. chant(); " width="380" height="97" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-fcfaf3bc3bc402661e2d745cf346a5af!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-fcfaf3bc3bc402661e2d745cf346a5af!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">i na kraju klijenta koji koristi ovaj servis:</p>
+			<img alt="public class CultistConfusion { 
+public static void ergs) { 
+CthuIhuCuItist cultist = new CthuIhuCuItist(); 
+System.out.println( &quot;Cultist is: &quot; 
+cultist), 
+CultistSeruice cs = 
+new Cultistservice(); 
+String chant = .getChant(cuItist); 
+System.out.println( &quot;Chant is: &quot; 
+* chant); " width="336" height="178" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-31ea5c5b5dcd0849372905486900ea41!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-31ea5c5b5dcd0849372905486900ea41!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">ako promenimo servis tako da umesto konkretne klase koristi interface:</p>
+			<img alt="Machine generated alternative text:
+public class CultistService { 
+static public String getChant(CuItist cultist) 
+return cultist. chant(); " width="334" height="93" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-c8ad6afecec10cd1128eced7cb80b8f5!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-c8ad6afecec10cd1128eced7cb80b8f5!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">neci biti dovoljno da samo rekompajliramo servis vec cemo morati da rekompajliramo i klijenta jer smo pokvarili binary compatibility. Ako pogledamo bytecode klijenta pre promene servisa:</p>
+			<img alt="Machine generated alternative text:
+codefhtagn: iavap -c CultistConfusion 
+lines omitted. 
+42: aload I 
+43: invokevirtual #14; // method 
+46: astore 3 
+lines omitted. 
+String; " width="639" height="103" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-9b42fc6942e60658300fef087984c772!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-9b42fc6942e60658300fef087984c772!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">vidimo da klijent trazi metod koji prima konkretnu klasu i zato, nakon promene klase u interface klijent vise nece raditi. Nakon rekompajliranja klijenta, on ce imati sledeci bytecode:</p>
+			<img alt="Machine generated alternative text:
+codefhtagn: iavap 
+lines omitted. 
+42: aload I 
+-c CultistConfusion 
+43: invokevirtual #14; // method ; 
+46: astore 3 
+lines omitted. " width="587" height="98" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-1c81ec33e38307ee0d7f6d7de1623402!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-1c81ec33e38307ee0d7f6d7de1623402!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Vidimo da sada klijent trazi metod koji uzima interface i njega ce naci u servisu. Ovo je razlog zasto je potrebno rekompajlirati, pored klase koju smo menjali, i sve klijente te klase u slucaju da smo pokvarili binary compatibility.</p>
+			<br />
+			<p lang="en-US" data-tag="important" style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">Adding a method with a name distinct from any existing method is binary-preserving source compatible</span>; the class files produced by recompiling existing clients of the library will be semantically equivalent since the source methods will be resolved the same way.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">￼<a href="http://codefhtagn.blogspot.com/2010/11/java-binary-compatibility-more-than.html" style="font-style:italic">http://codefhtagn.blogspot.com/2010/11/java-binary-compatibility-more-than.html</a></p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Source compatibility</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Source compatibility concerns translating Java source code into class files.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Means that you need to recompile to keep things working, but you don&#39;t have to actually change the sources.</p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Source compatibility is influenced by changing the set of types available during compilation, such as <span style="background-color:lime">adding a new class</span>, as well as changes within existing types themselves, such as <span style="background-color:lime">adding an overloaded method</span>.</p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Full source compatibility with any existing program is usually not achievable because of<span style="font-family:Courier New"> * </span>imports. For example, consider library L1 with packages <span style="font-family:Courier New">foo </span>and <span style="font-family:Courier New">bar </span>where <span style="font-family:Courier New">foo </span>includes the class <span style="font-family:Courier New">Quux</span>. Then library L2 adds class <span style="font-family:Courier New">bar.Quux</span>. Consider the following program:</p>
+			<img alt="Machine generated alternative text:
+import foo.*; 
+import bar. * ; 
+public class HelloQuux { 
+public static void main(String. 
+ergs) { 
+Object o = Quux.class; 
+System .out.println( &quot;Hello &quot; + o.toString()); " width="356" height="169" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-339c7e20203405a73fb61012bdc00db3!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-339c7e20203405a73fb61012bdc00db3!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">The <span style="font-family:Courier New">HelloQuux </span>class will compile under L1 but not under L2, since the name <span style="font-family:Courier New">Quux </span>is now ambiguous as reported by <span style="font-family:Courier New">javac</span>:</p>
+			<img alt="Machine generated alternative text:
+HelloQuux .3ava:6: reference to Quux is ambiguous, 
+class foo.Quux in foo match 
+Object o = Quux.class; 
+I error 
+both class bar .Quux in bar and " width="486" height="85" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-34fe1efa2b100c4a1a73550ce1fa3098!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-34fe1efa2b100c4a1a73550ce1fa3098!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Sink</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Opsti naziv za &quot;destination&quot;.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Marshaling</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Proces konvertovanja Java objekta u neki 2. format, XML, JSON, koji se moze poslati preko mreze i onda rekonstruisati taj objekat na 2. kraju.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Syntax sugar</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Syntax that is designed to make things easier to read, but doesn&#39;t introduce anything new.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Boilerplate code</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Ovo je kod koji je neophodan da bi nesto radilo.￼Npr. u HTML dokumentu <span style="font-family:Courier New">&lt;!DOCUMENT html&gt; </span>nema vidljivih efekata ali je neophodno da bi browser znao koja verzija HTML-a se koristi u nastavku file-a.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 JavaBean</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Objekat mora imati no-argument constructor da bi bio JB.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span style="font-family:Courier New">main </span>metod</p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">public static void main(String… args) {}</span>￼</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">The Java definition for starting applications is quite simple: the user specifies the class that should be started, and the Java system will then invoke a method called <span style="font-family:Courier New">main </span>in that class. If such a method does not exist in that class, an error is reported.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Side effect (side-effect, side-effects)</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Ako funkcija menja stanje sistema onda se za nju kaze da ima side-effect.￼￼Funkcije sa side-effect-ovi obicno dolaze u parovima:</p>
+			<ul>
+				<li>open and close resources,</li>
+				<li>new and delete file,</li>
+				<li>semafore <span lang="en-US">seize </span>and release resources, …</li>
+			</ul>
+			<p data-tag="idea" style="margin-top:0pt;margin-bottom:0pt">Jos 1 vazna napomena je da se ove funkcije <span style="background-color:lime">moraju pozivati odredjenim redosledom</span> da bi sistem radio ispravno (ne mozemo zatvoriti resurse koji nisu ni otvoreni). Ako smo nekad imali situaciju da promenom redosleda pozivanja odredjenih funkcija, bug se resi, onda je to zato sto su negde u tim funkcijama zakopani side-effect-ovi koji nisu bili pozivani u pravom redosledu.<span style="font-family:Courier New;background-color:lime"> &lt;- </span><span style="background-color:lime">OBRATI PAZNJU.</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span style="font-family:Courier New">goto</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Ovo je keyword koja je markirana kao <span style="background-color:lime">not used</span> u dokumentaciji.￼<span style="font-family:Courier New">goto </span>se smatra jako losim programiranje i na ovaj nacin, kreatori Java-e, su osigurali da se <span style="font-family:Courier New">goto </span>nikad ne implementira.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Memory leak</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">I<span lang="en-US">n general, a Java memory leak happens when an application unintentionally (due to logical errors in code) holds on to object references that are no longer required. These unintentional object references prevent the built-in Java garbage collection mechanism from freeing up the memory consumed by these objects.</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 Reference leak</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">Ako u <span style="font-family:Courier New">public </span>metodu koristimo <span style="font-family:Courier New">private </span>polje objekta koje pak ukazuje na neki objekat, taj objekat je dostupan samo u okviru tog objekta, naravno, medjutim ako vratimo iz tog <span style="font-family:Courier New">public </span>metoda taj <span style="font-family:Courier New">private </span>objekat, Java ce kreirati novu referencu ka tom <span style="font-family:Courier New">private </span>objekatu i vratiti tu referencu. Tako da ce klijent sada imati referencu ka tom <span style="font-family:Courier New">private </span>objekatu i moci ce da ga menja, sto prakticno znaci da objekat nije vise <span style="font-family:Courier New">private</span>.</p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt">Ovako se <a href="onenote:#Just%20language&amp;section-id={2C59F4F1-88C2-4BAE-B7CD-F075B944BAA5}&amp;page-id={EBA4C1BA-C2B2-4E23-8876-EEBCFA624D70}&amp;object-id={6DFB44F7-5F4C-4C93-A4CA-27FDDE86F62B}&amp;39&amp;base-path=https://d.docs.live.net/9f971ac3eb8340c4/Documents/OneNote%202016/Programiranje/Java.one">rusi i</a><span lang="en-US">mmutable osobina klase</span><span lang="en-US">.</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Converter</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Used to convert one Java type to another Java type.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">For example, from <span style="font-family:Courier New">Long </span>to <span style="font-family:Courier New">java.util.Date </span>or from <span style="font-family:Courier New">Integer </span>to <span style="font-family:Courier New">Color </span>or from <span style="font-family:Courier New">String </span>to<span style="font-family:Courier New"> Date. </span>It can be used in the web tier or any other tier that needs conversion service.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Formatter</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Used to convert <span style="font-family:Courier New">String </span>to another Java type and back. So, one type must be <span style="font-family:Courier New">String. </span>You cannot, for example, write a formatter that converts a <span style="font-family:Courier New">Long </span>to a<span style="font-family:Courier New"> Date.</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Examples of formatters are <span style="font-family:Courier New">DateFormatter, </span>for parsing <span style="font-family:Courier New">String </span>to <span style="font-family:Courier New">java.util.Date </span>and formatting a <span style="font-family:Courier New">Date. </span>In addition, formatter&#39;s messages can be localized.￼￼Formatters are suitable in the web environment, such as a <a href="onenote:Spring.one#Formatting&amp;section-id={60D72966-DE47-4196-BD46-5597D2BC9E86}&amp;page-id={E1B6D3D9-D7CB-4630-83CD-3716A5BAE916}&amp;end&amp;base-path=https://d.docs.live.net/9f971ac3eb8340c4/Documents/OneNote%202016/Programiranje">Spring MVC application</a>.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Trust anchor</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">In cryptographic systems, a trust anchor defines the root entity for which trust is assumed and derived.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">In architectures like X.509, a root certificate is a trust anchor. Additionally, the root certificate guarantees trust for all other certificates in the chain.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US">Program vs. process vs. thread</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="color:#171717">A </span><span style="color:#171717;background-color:lime">program</span><span style="color:#171717"> is an executable file containing a set of instructions and passively stored on disk. One program can have multiple processes. For example, the Chrome browser creates a different process for every single tab.</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="color:#171717">A </span><span style="color:#171717;background-color:lime">process</span><span style="color:#171717"> means a program is in execution. When a program is loaded into the memory and becomes active, the program becomes a process. The process requires some essential resources such as registers and stack. A process can have 1 or more threads. 1 proces moze pitati OS da pokrene 2. proces. If 2 processes need to talk, they can do so by using Inter Process Communication (IPC). Many applications are designed to work this way so that if a worker process get unresponsive, it can be restarted without stopping other processes which are running different parts of the application.</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="color:#171717">A </span><span style="color:#171717;background-color:lime">thread</span><span style="color:#171717"> </span><span lang="x-IV" style="color:#171717">is the smallest unit of execution within a process.</span></p>
+			<br />
+			<img width="549.5" height="234.5" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-7abec7a03f684fda8535a1355a5b6335!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-7abec7a03f684fda8535a1355a5b6335!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Main differences between process and thread:</p>
+			<ol>
+				<li><span lang="en-US">Processes are usually independent, while threads exist as subsets of a process.</span></li>
+				<li><span lang="en-US">Each process has its own memory space. Threads that belong to the same process share the same memory.</span></li>
+				<p lang="en-US" data-tag="critical" style="margin-top:0pt;margin-bottom:0pt">Upravo to sto svaki proces ima svoj privatni deo memorije nam obezbedjuje sandboxing izmedju task-ova koji se izvrsavaju na razlicitim procesima, a to pak doprinosi i security-u, jer task u 1 procesu ne moze uticati tek tako na 2. task u 2. procesu.<span style="font-family:Courier New"> &lt;- </span>STA ZAPRAVO ZNACI SANDBOXING.</p>
+				<li><span lang="en-US">A process is a heavyweight operation. It takes more time to create and terminate.</span></li>
+				<li><span lang="en-US">Context switching is more expensive between processes.</span></li>
+				<li><span lang="en-US">Inter Thread Communication (ITC) is faster then Inter Process Communication (IPC).</span></li>
+			</ol>
+		</div>
+		<div style="position:absolute;left:48px;top:12298px;width:2189px">
+			<p style="margin-top:0pt;margin-bottom:0pt">xh1 <span lang="en-US" style="background-color:lime">Instalacija OpenJDK-a</span></p>
+			<br />
+			<ol>
+				<li><span lang="en-US">Download-ovati zeljenu verziju OpenJDK-a sa <a href="http://jdk.java.net/archive/">http://jdk.java.net/archive/</a>.</span></li>
+				<li><span lang="en-US">Extract the ZIP file into a folder, e.g. <span style="font-family:Courier New;color:#242729">C:\Program Files\Java\ </span>and it will create a <span style="font-family:Courier New;color:#242729">jdk-XY </span>folder (where the <span style="font-family:Courier New">bin</span> folder is a direct sub-folder).</span></li>
+				<li><span lang="en-US">Set <span style="font-family:Courier New">JAVA_HOME = C:\Program Files\Java\jdk-XY</span>.</span></li>
+				<li><span lang="en-US">Set <span style="font-family:Courier New">PATH = %JAVA_HOME%\bin</span></span></li>
+				<li><span lang="en-US">Test with <span style="font-family:Courier New">java -version</span>.</span></li>
+				<br />
+			</ol>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Laksi nacin je da koristimo AdoptOpenJDK (<a href="https://adoptopenjdk.net/">https://adoptopenjdk.net/</a>) where we can find<span style="font-family:Courier New"> .msi </span>installers for OpenJDKs, which will perform all the things listed here (unpacking, <span style="font-family:Courier New">PATH</span> variable updating (and <span style="font-family:Courier New">JAVA_HOME</span>), uninstaller...).</p>
+		</div>
+		<div style="position:absolute;left:48px;top:17955px;width:2215px">
+			<p style="margin-top:0pt;margin-bottom:0pt">xh1 <span style="background-color:lime">Webhooks</span></p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt">Opsti naziv za servis koji omogucava istu stvar kao i <span style="background-color:lime">REST</span> samo <span style="background-color:lime">u suprotnom smeru</span>. Drugim recima, REST omogucava komunikaciju izmedju klijenta i servera pri cemu je klijent inicijator, odnosno klijent salje request. Sa druge strane, webhook omogucava komunikaciju izmedju klijenta i servera pri cemu je server inicijator request-a. Da bi server mogao da dodje do klijenta, klijent mora imati javno dostupnu adresu.</p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">To set up a webhook, the client gives a unique URL to the server API and specifies which event it wants to know about. Once the webhook is set up, the client no longer needs to poll the server; the server will automatically send the relevant payload to the client’s webhook URL when the specified event occurs.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Webhooks are often referred to as <span style="background-color:lime">reverse APIs or push APIs</span>, because they put the responsibility of communication on the server, rather than the client. Instead of the client sending HTTP requests—asking for data until the server responds—the server sends the client a single HTTP <span style="font-family:Courier New">POST </span>request as soon as the data is available. Despite their nicknames, webhooks are not APIs; they work together. <span style="background-color:lime">An application must have an API to use a webhook.</span><span style="font-family:Courier New;background-color:lime"> &lt;- </span><span style="background-color:lime">GLAVNA CAKA.</span></p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><a href="https://www.redhat.com/en/topics/automation/what-is-a-webhook" style="font-style:italic">https://www.redhat.com/en/topics/automation/what-is-a-webhook</a></p>
+		</div>
+		<div style="position:absolute;left:48px;top:17756px;width:2214px">
+			<p style="margin-top:0pt;margin-bottom:0pt">xh1 <span style="background-color:lime">Decorator</span></p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt">A <span style="background-color:lime">decorator</span> is a Java class that is annotated <span style="font-family:Courier New">javax.decorator.Decorator</span> and that has a corresponding <span style="font-family:Courier New">decorators</span> element in the <span style="font-family:Courier New">beans.xml</span> file. A decorator bean class must also have a delegate injection point, which is annotated<span style="font-family:Courier New"> javax.decorator.Delegate</span>. This injection point can be a field, a constructor parameter, or an initializer method parameter of the decorator class. Decorators are outwardly (spolja) similar to interceptors. However, they actually perform tasks complementary to those performed by interceptors. Interceptors perform cross-cutting tasks associated with method invocation and with the lifecycles of beans, but cannot perform any business logic. Decorators, on the other hand, do <span style="background-color:lime">perform business logic by intercepting business methods of beans</span>. This means that instead of being reusable for different kinds of applications, as are interceptors, their logic is specific to a particular application. If an application has both interceptors and decorators, the interceptors are invoked first. This means, in effect, that you cannot intercept a decorator.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-style:italic">&quot;25.7 Using Decorators in CDI Applications&quot;, JEE 7 Tutorial u Java EE folderu.</span></p>
+		</div>
+		<div style="position:absolute;left:48px;top:16933px;width:2208px">
+			<p style="margin-top:0pt;margin-bottom:0pt">xh1 <span style="font-family:Courier New;background-color:lime">Void </span><span style="background-color:lime">klasa</span></p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt">The <span style="font-family:Courier New">Void </span>class exists because of the fact that some time we may need <span style="background-color:lime">to represent the </span><span style="font-family:Courier New;background-color:lime">void </span><span style="background-color:lime">keyword as an object</span>. But at the same point we <span style="background-color:lime">cannot create an instance of the </span><span style="font-family:Courier New;background-color:lime">Void </span>class using the <span style="font-family:Courier New">new </span>operator. This is because the constructor in <span style="font-family:Courier New">Void </span>has been declared as <span style="font-family:Courier New">private</span>. Moreover the <span style="font-family:Courier New">Void </span>class is a <span style="font-family:Courier New">final </span>class which means that there is no way we can inherit this class. The only purpose that remains for the existence of the <span style="font-family:Courier New">Void </span>class is reflection, where <span style="background-color:lime">we can get the return type of a method as </span><span style="font-family:Courier New;background-color:lime">void</span>.</p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">public class VoidTest{</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">public static void main(String[] args) throws SecurityException, NoSuchMethodException {</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">Class testClass = Test.class.getMethod(&quot;someTest&quot;,null).getReturnType();</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">System.out.println(testClass == Void.TYPE);</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">System.out.println(testClass == Void.class);</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">}</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">}</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">class Test{</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">public void someTest(){}</span></p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">}</span></p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt">You can also use <span style="font-family:Courier New">Void </span>class <span style="background-color:lime">in </span><span style="font-family:Courier New;background-color:lime">Generics </span><span style="background-color:lime">to specify that you don&#39;t care about the specific type of object being used</span>. For example:</p>
+			<p style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">List&lt;void&gt; someList;</span></p>
+		</div>
+		<div style="position:absolute;left:48px;top:16101px;width:2230px">
+			<p style="margin-top:0pt;margin-bottom:0pt">xh1 <span lang="en-US" style="background-color:lime">Serialization (serializacija) objekta</span></p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">Serializable </span>interface is meant solely <span style="background-color:lime">to identify that the object will be serialized</span>. It doesn&#39;t have any methods which means that the serialization process is managed automatically by the runtime system and requires little user-defined code to be written.</p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Serijalizovana verzija objekta zahteva 3 informacije:</p>
+			<ol>
+				<li><span lang="en-US">state (polja i njihove vrednosti) objekta,</span></li>
+				<li><span lang="en-US">ime klase i</span></li>
+				<li><span lang="en-US">verziju klase (kako bi bili sigurni da svi koriste istu verziju klase. Ostvaruje se kroz <span style="font-family:Courier New">private static final long serialVersionUID </span>polje). Ako se verzija ne definise, Java ce sama izracunati verziju klase pri kompajliranju i cuvati ovu vrednost u <span style="font-family:Courier New">.class</span> file-u. Algoritam je definisan specifikacijom i radi na sledeci nacin:</span></li>
+				<table style="border:1px solid;border-collapse:collapse">
+					<tr>
+						<td style="border:1px solid"><img alt="It is a hash computed from the class name, 
+interfaces implemented, methods and 
+fields using a SHA " width="359" height="59" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-03cd4acdb40e013f3a19813f2ee2331e!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-03cd4acdb40e013f3a19813f2ee2331e!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+						</td>
+					</tr>
+				</table>
+			</ol>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">serialVersionUID </span>polje je karakteristicno samo za serializable objekte. Objekti koji ne spadaju u ovu grupu ga nemaju.</p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Pri deserijalizaciji radi se sledece:</p>
+			<ol>
+				<li><span lang="en-US">cita se serijalizovani objekat,</span></li>
+				<li><span lang="en-US">nadje se ime klase serijalizovanog objekta i ucita se <span style="font-family:Courier New">Class </span>objekat za tu klasu. Ako <span style="font-family:Courier New">Class </span>objekat ne moze da se ucita, iz bilo kog razloga, ili ako se ne poklapaju verzije serijalizovanog objekta i <span style="font-family:Courier New">Class </span>objekta, deserijalizacija ce fail-ovati.</span></li>
+				<li><span lang="en-US">Rezervise se prostor na heap-u i restore-uje se stanje objekta na heap-u na osnovu serijalizovanog objekta. Napomena je da se ne pokrece konstruktor objekta vec se objekat restore-uje. Ako se pri restore-ovanju objekta naidje na non-serializable ancestor (super-class) onda ce se pokrenuti konstruktor tog ancestor-a kao i svih njegovih super-class-a bez obzira da li su te klase serializable ili ne.</span></li>
+			</ol>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">U slucaju da se klasa promeni (polja ili metodi dodati ili izbrisani) ali da verzija klase ostane ista, then the receiving virtual machine will accept to deserialize the object. In this case the default behavior is defined in the deserialization process. If there is no information in the transmitted state to correctly set up a field, then this field will have a default value and if they are undefined field in the serialized object that do not exist anymore in the receiving class then this information will be lost.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Da bi videli vrednost <span style="font-family:Courier New">serialVersionUID-a</span>, koristimo tool <span style="font-family:Courier New">serialver</span>:</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">serialver com.mds.SomeClass</span></p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">Kada hard-code-ujemo </span><span style="font-family:Courier New;background-color:lime">serialVersionUID</span><span style="font-family:Courier New"> </span>u okviru klase onda vazi sledece:</p>
+			<table style="border:1px solid;border-collapse:collapse">
+				<tr>
+					<td style="border:1px solid"><img alt="Changes that do not affect deserialization: 
+add/delete instance variable 
+make instance variable static 
+change instance variable from transient to non-transient 
+change access levels of variables 
+add/remove classes to/from inheritance tree " width="480" height="164" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-1d35409449cf482a8b07f80da1c5d7a7!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-1d35409449cf482a8b07f80da1c5d7a7!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+					<br />
+					</td>
+					<td style="border:1px solid"><img alt="Changes that affect deserialization: 
+change instance variable&#39;s type 
+make serializable class (anywhere in object graph) non-serializable " width="480" height="71" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-7e49b1d0227d49108680346197df7b85!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-7e49b1d0227d49108680346197df7b85!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+					</td>
+				</tr>
+			</table>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Jos 1, prethodna 2 slajda vaze samo ako smo hard-code-ovali <span style="font-family:Courier New">serialVersionUID </span>u okviru klase, ako nismo onda ce se koristiti default-ni algoritam za izracunavanje <span style="font-family:Courier New">serialVersionUID-a</span>. If a class is serializable, then it subclass is also serializable. Ali ako class-a nije serializable onda njegovu subclass-u mozemo uciniti serializable tako sto cemo implementirati interface <span style="font-family:Courier New">Serializable </span>u toj subclass-i.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-style:italic">Obuka Udemy, Java in depth, 213. ep.</span></p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Kao sto vidimo, <span style="background-color:lime">pri serializaciji</span> Java objekta, the <span style="background-color:lime">methods are not explicitly stored</span>. Reason for this is that <span style="background-color:lime">Java code had to be at both ends of the serialization - deserialization &quot;pipe.&quot;</span> In actuality, the class definition, that you are using, have to be on both ends of the &quot;pipe&quot;. Dakle program koji radi serializaciju kao i program koji radi deserializaciju, moraju imati pristup klasi objekta koji je serializovan da bi on mogao da se deserializuju.</p>
+		</div>
+		<div style="position:absolute;left:48px;top:15479px;width:2220px">
+			<p style="margin-top:0pt;margin-bottom:0pt">xh1 <span lang="en-US" style="font-family:Courier New;background-color:lime">Comparable</span></p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">compareTo()</span> je u istom rangu kao i <span style="font-family:Courier New">equals()</span> i <span style="font-family:Courier New">hashCode()</span> metodi. Kada se override-uje moraju se postovati odredjena pravila:</p>
+			<ol>
+				<li><span lang="en-US"><span style="font-family:Courier New">compareTo() </span>must be in consistent with <span style="font-family:Courier New">equals() </span>method e.g. if two objects are equal via <span style="font-family:Courier New">equals(), </span>there <span style="font-family:Courier New">compareTo() </span>must return 0<span style="font-family:Courier New"> -&gt; (x.compareTo(y) == 0) == (x.equals(y)). </span>Ako ovo nije ispunjeno, potrebno je to posebno naglasiti: <span style="font-family:Courier New">Note: This class has a natural ordering that is inconsistent with equals. </span>A class whose <span style="font-family:Courier New">compareTo() </span>method imposes an order that is inconsistent with <span style="font-family:Courier New">equals() </span>will still work, but sorted collections containing elements of the class may not obey the general contract of the appropriate collection interfaces (<span style="font-family:Courier New">Collection, Set, </span>or<span style="font-family:Courier New"> Map</span>). This is because the general contracts for these interfaces are defined in terms of the <span style="font-family:Courier New">equals() </span>method, but sorted collections use the equality test imposed by <span style="font-family:Courier New">compareTo() </span>in place of <span style="font-family:Courier New">equals()</span>. It is not a catastrophe if this happens, but it’s something to be aware of.</span></li>
+				<p lang="en-US" data-tag="idea" style="margin-top:0pt;margin-bottom:0pt">For example, consider the <span style="font-family:Courier New">BigDecimal </span>class, whose <span style="font-family:Courier New">compareTo() </span>method is inconsistent with <span style="font-family:Courier New">equals()</span>. If you create a <span style="font-family:Courier New">HashSet</span> instance and add new <span style="font-family:Courier New">BigDecimal(&quot;1.0&quot;)</span> and <span style="font-family:Courier New">new BigDecimal(&quot;1.00&quot;)</span>, the set will contain 2 elements because the 2 <span style="font-family:Courier New">BigDecimal</span> instances added to the set are unequal when compared using the <span style="font-family:Courier New">equals() </span>method, because <span style="font-family:Courier New">BigDecimal#equals() </span>mehtod compares both value and scale of 2 <span style="font-family:Courier New">BigDecimal </span>instances. If, however, you perform the same procedure using a <span style="font-family:Courier New">TreeSet </span>instead of a <span style="font-family:Courier New">HashSet</span>, the set will contain only 1 element because the 2 <span style="font-family:Courier New">BigDecimal </span>instances are equal when compared using the <span style="font-family:Courier New">compareTo() </span>method.</p>
+				<li><span lang="en-US"><span style="font-family:Courier New">compareTo() </span>must throw <span style="font-family:Courier New">NullPointerException </span>if current object get compared to <span style="font-family:Courier New">null </span>object as opposed to <span style="font-family:Courier New">equals() </span>which return <span style="font-family:Courier New">false </span>on such scenario.</span></li>
+				<li><span lang="en-US">Don&#39;t use subtraction for comparing integral values because result of subtraction can overflow <span style="font-family:Courier New">Integer </span>max/min value. It is safe to use only if difference between the lowest and highest possible field values is less than or equal to <span style="font-family:Courier New">Integer.MAX_VALUE</span> (				<math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+					<msup>
+						<mn>2</mn>
+						<mrow>
+							<mn>31</mn>
+						</mrow>
+					</msup>
+				</math>
+-1). To be safe we should use either 				<span style="font-family:Courier New">Integer.compareTo() </span>or logical operators (&lt; or &gt;) for comparison.</span></li>
+				<li><span lang="en-US">Use <span style="font-family:Courier New">Float.compareTo() </span>or <span style="font-family:Courier New">Double.compareTo() </span>to compare floating point number since relational operator doesn&#39;t obey contract of <span style="font-family:Courier New">compareTo() </span>for floating point numbers.</span></li>
+				<li><span lang="en-US">When comparing <span style="font-family:Courier New">String </span>using <span style="font-family:Courier New">compareTo() </span>consider case. Just like <span style="font-family:Courier New;background-color:lime">equals()</span><span style="font-family:Courier New"> </span>consider case, <span style="font-family:Courier New;background-color:lime">compareTo()</span><span style="font-family:Courier New"> </span>also <span style="background-color:lime">consider case</span>. If you want to compare regardless of case than use <span style="font-family:Courier New">String.compareToIgnoreCase().</span></span></li>
+			</ol>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US" style="background-color:lime">Primer:</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">return (this.id &lt; otherStudent.id ) ? -1 : (this.id &gt; otherStudent.id ? 1 : 0);</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Classes that depend on comparison include the sorted collections <span style="font-family:Courier New">TreeSet</span> and <span style="font-family:Courier New">TreeMap</span>, and the utility classes <span style="font-family:Courier New">Collections </span>and <span style="font-family:Courier New">Arrays</span>, which contain searching and sorting algorithms.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-style:italic">Primer koda &quot;Examples/compareToContract&quot; u Test enviroment folderu.</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New;background-color:lime">Collections </span>je utility klasa za interface <span style="font-family:Courier New">Collection</span>. Ova klasa u sebi ima 2 grupe metoda:</p>
+			<table style="border:1px solid;border-collapse:collapse">
+				<tr>
+					<td style="border:1px solid"><img alt="Collections 
+al go(ithNiC 
+(default method 
+candidates) 
+sort(List) 
+shuffle(List) 
+reverse(List) 
+(static method 
+candidates) 
+List nCopies(n, element) 
+List emptyList() 
+List singletonList(element) " width="480" height="182" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-da639bd5464f41dd91d06edf56621894!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-da639bd5464f41dd91d06edf56621894!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+					</td>
+				</tr>
+			</table>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Uvodjenjem <span style="font-family:Courier New">default-nih </span>i statickih metoda u interface-e, <span style="background-color:lime">gubi se potreba za ovakvim utility klasama</span> jer sada, metode iz ove klase mozemo definisati direktno u interface-u, gde im je i mesto.</p>
+		</div>
+		<div style="position:absolute;left:48px;top:15076px;width:2195px">
+			<p style="margin-top:0pt;margin-bottom:0pt">xh1 <span lang="en-US" style="background-color:lime">Diamond problem</span></p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Consider a class <span style="font-family:Courier New">A </span>has <span style="font-family:Courier New">foo() </span>method and then <span style="font-family:Courier New">B </span>and <span style="font-family:Courier New">C </span>derived from <span style="font-family:Courier New">A </span>and has there own <span style="font-family:Courier New">foo() </span>implementation and now class <span style="font-family:Courier New">D </span>derive from <span style="font-family:Courier New">B </span>and <span style="font-family:Courier New">C </span>using multiple inheritance and if we refer just <span style="font-family:Courier New">foo(), </span>from<span style="font-family:Courier New"> D, </span>compiler will not be able to decide which <span style="font-family:Courier New">foo() </span>it should invoke. This is called diamond problem because structure on this inheritance scenario is similar to 4 edge diamond:</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">       A foo()</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">          /   \</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">B foo()   C foo()</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">          \   /</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">        D foo()</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Ovo je jedan od razloga zasto Java <span style="background-color:lime">ne podrzava multiple inheritance for classes</span>.</p>
+		</div>
+		<div style="position:absolute;left:48px;top:15311px;width:1599px">
+			<p style="margin-top:0pt;margin-bottom:0pt">xh1 <span lang="en-US" style="background-color:lime">Varargs (variable arguments)</span></p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Naredna 3 metoda su identicna:</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">public static void main(String</span><span style="font-family:Courier New;background-color:lime">[]</span><span style="font-family:Courier New"> args){}</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">public static void main(String args</span><span style="font-family:Courier New;background-color:lime">[]</span><span style="font-family:Courier New">){}</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">public static void main(String</span><span style="font-family:Courier New;background-color:lime">…</span><span style="font-family:Courier New"> args){}</span></p>
+		</div>
+		<div style="position:absolute;left:48px;top:12584px;width:2182px">
+			<p style="margin-top:0pt;margin-bottom:0pt">xh1 <span lang="en-US" style="background-color:lime">Class name vs. file name</span></p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">Razlog zasto </span><span style="font-family:Courier New;background-color:lime">public </span><span style="background-color:lime">klase treba da imaju isto ime kao i file u kome se nalaze:</span></p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Let&#39;s  assume we have two <span style="font-family:Courier New">public </span>classes Y &amp; Z in a file named <span style="font-family:Courier New">Y.java</span>. Now, let&#39;s assume a different class X is using Z. Now, when we compile X, the compiler first tries to locate <span style="font-family:Courier New">Z.class </span>and if it cannot find it, then it tries to locate <span style="font-family:Courier New">Z.java </span>so that it can compile it automatically. But, since we only have <span style="font-family:Courier New">Y.java</span>, the class Z cannot be located and hence we get a compilation error. So, we do need to place them in separate files.</p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Preporuka je da <span style="background-color:lime">imena klasa</span> budu <span style="background-color:lime">imenice u jednini</span> dok <span style="background-color:lime">imena metoda</span> treba, ako metod izvrsava neku akciju, onda treba koristiti <span style="background-color:lime">glagole koji opisuju sta metod radi</span>. Za razliku od imana klasa, kod metoda ne treba izbegavati duge nazive. Cilj je da naziv opisuje sta radi metod.</p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US" style="background-color:lime">Organizacija klase</span></p>
+			<table style="border:1px solid;border-collapse:collapse">
+				<tr>
+					<td style="border:1px solid"><img alt="Variables static followed by instance 
+Static initializers 
+Static nested classes 
+Static methods 
+Instance initializers 
+Constructors 
+Instance nested classes 
+Methods " width="350" height="222.5" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-0c18423ed3de0c09378a86c4189927ef!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-0c18423ed3de0c09378a86c4189927ef!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+					<br />
+					</td>
+				</tr>
+			</table>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:lime">Metodi ne</span> bi trebali da budu <span style="background-color:lime">&gt; 20 linija</span> koda.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">U slucaju <span style="background-color:lime">lokalnih promenljivi</span>, treba ih <span style="background-color:lime">definisati tamo gde se koriste</span>, a ne obavezno na pocetku metoda.</p>
+			<br />
+			<p style="margin-top:0pt;margin-bottom:0pt">xh2 <span lang="en-US" style="background-color:lime">Organizacija interface-a</span></p>
+			<table style="border:1px solid;border-collapse:collapse">
+				<tr>
+					<td style="border:1px solid"><img alt="public interface InterfaceName { 
+static final fields 
+abstract methods 
+default methods 
+static methods 
+Nested types " width="280" height="225" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-526437ccb9604d2e98be3606c05f9b9c!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-526437ccb9604d2e98be3606c05f9b9c!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+					</td>
+				</tr>
+			</table>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Pod <span style="font-family:Courier New">Nested types </span>se podrazumevaju nested klase i nested interface-i.</p>
+			<p lang="en-US" data-tag="critical" style="margin-top:0pt;margin-bottom:0pt">Interface-i omogucavaju da 2 objekta komuniciraju na siguran nacin, tako sto 1 objekat moze biti siguran da 2. objekat poseduje odredjne metode ili property-e, ako zna da taj objekat implementira odredjeni iterface.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="background-color:red">POETNA INTERFACE-A</span><span style="font-family:Courier New;background-color:red"> -^</span></p>
+			<table style="border:1px solid;border-collapse:collapse">
+				<tr>
+					<td style="border:1px solid"><img alt="Interface Naming Conventions 
+• Interface should be a good object name 
+• Example Java&#39;s List interface 
+• Implementations - ArrayList, LinkedList, CheckedList, 
+SingletonList 
+• Don&#39;t Start with &#39;l&#39; 
+• NO List " width="465.5" height="248" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-513406083413074e077f73a9234ef456!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-513406083413074e077f73a9234ef456!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+					</td>
+					<td style="border:1px solid"><img alt="Implementation Naming 
+• When just one implementation - generally accepted to use 
+&lt;lnterface Name> + Impl 
+• When more than one, name should indicate difference of 
+Implementation " width="496.5" height="247" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-a15a6c433a9802ca269fd82070f05407!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-a15a6c433a9802ca269fd82070f05407!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+					</td>
+				</tr>
+			</table>
+		</div>
+		<div style="position:absolute;left:48px;top:13736px;width:2202px">
+			<p style="margin-top:0pt;margin-bottom:0pt">xh1 <span lang="en-US" style="background-color:lime">Komentari</span></p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New;background-color:lime">//</span><span style="font-family:Courier New"> </span>predstavlja single-line komentar.</p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New;background-color:lime">/* … */ </span>predstavlja multi-line komentar.</p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New;background-color:lime">/** </span><span style="font-family:Courier New;background-color:lime">…</span><span style="font-family:Courier New;background-color:lime"> */ </span>predstavljaju documentation komentare ili JavaDoc komentare.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">The comment start symbol must have two asterisks to be recognized as a javadoc comment. Such a comment immediately preceding the class declaration is read as a class comment. If the comment is directly above a method signature, it is considered a method comment.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Za ovakve komentare koristimo <span style="font-family:Courier New;background-color:lime">javadoc </span>tool koji ekstraktuje ove komentare i kreira HTML stranicu na osnovu njih.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><span style="font-family:Courier New">javadoc </span>tool smesta generisane file-ove u folder <span style="font-family:Courier New">doc </span>projekta. IDE ima mogucnost generisanja javadoc komentara na osnovu potpisa metoda iznad kog se javadoc komentar nalazi.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Using <span style="font-family:Courier New">javadoc</span>, several special key symbols are available for formatting the documentation. These key symbols are usually called <span style="background-color:lime">javadoc tags</span> and they start with the<span style="font-family:Courier New"> @ </span>symbol and include:</p>
+			<table style="border:1px solid;border-collapse:collapse">
+				<tr>
+					<td style="border:1px solid"><img alt="@author 
+•param 
+@return 
+•see 
+@throus 
+eversi on 
+author name(s) 
+name ard 
+des:riptbn of the return 
+cross- 
+exceptiom thrown and the circumstmcæ 
+versbn description " width="478" height="107" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-6358920c985d0a282637ca5edc8d961e!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-6358920c985d0a282637ca5edc8d961e!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+					<br />
+					</td>
+				</tr>
+			</table>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">The <span style="font-family:Courier New">@author </span>and <span style="font-family:Courier New">@version </span>tags are regularly found in class and interface comments and cannot be used in constructor, method, or field comments.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">The <span style="font-family:Courier New">@param </span>and <span style="font-family:Courier New">@throws </span>tags are used with methods and constructors, whereas <span style="font-family:Courier New">@return </span>is just used with methods.</p>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">The <span style="font-family:Courier New">@see </span>tag has several different forms and may be used in any documentation comment:</p>
+			<table style="border:1px solid;border-collapse:collapse">
+				<tr>
+					<td style="border:1px solid"><img alt="@see &quot;The Java Language Specification. by Joy et al&quot; 
+@see (a href—&quot;http:/ 81ueJ web 
+@see #fsAIive 
+@see java . util . ArrayLfst#add " width="436" height="70" src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-67bee72f87980d0f11f32bbef48a3afe!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('vujo00@gmail.com')/onenote/resources/0-67bee72f87980d0f11f32bbef48a3afe!1-9F971AC3EB8340C4!sc72e18d0ffdc47fea25d1ca4831e0908/$value" data-fullres-src-type="image/png" />
+					<br />
+					</td>
+				</tr>
+			</table>
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">The 1st simply embeds a text string with no hyperlink; the 2nd embeds a hyperlink to the specified document; the 3th links to the documentation for the <span style="font-family:Courier New">isAlive </span>method in the same class; the 4th links to the documentation for the <span style="font-family:Courier New">add() </span>method in the <span style="font-family:Courier New">ArrayList </span>class of the <span style="font-family:Courier New">java.util package</span>.</p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt"><a href="https://docs.oracle.com/javase/6/docs/technotes/tools/windows/javadoc.html" style="font-style:italic">https://docs.oracle.com/javase/6/docs/technotes/tools/windows/javadoc.html</a></p>
+			<br />
+			<p lang="en-US" data-tag="critical" style="margin-top:0pt;margin-bottom:0pt">Komentari treba da opisuju <span style="background-color:lime">zasto je nesto uradjeno a ne sta je uradjeno ili kako je uradjeno</span> jer sta je uradjeno i kako je uradjeno se vidi iz koda ali ponekad nije jasno zasto je to uradjeno. Npr. metod <span style="font-family:Courier New">incrementByOne() </span>u sebi jasno opisuje sta je uradjeno i kako, medjutim ne odgovara na pitanje zasto bas za 1 a ne za 2 ili 3.<span style="font-family:Courier New;background-color:lime"> &lt;- </span><span style="background-color:lime">KAKO KORISTITI KOMENTARE.</span></p>
+		</div>
+		<div style="position:absolute;left:48px;top:18467px;width:1617px">
+			<p style="margin-top:0pt;margin-bottom:0pt">xh1 <span lang="en-US" style="font-family:Courier New;background-color:lime">java.util.Random</span></p>
+			<br />
+			<p lang="en-US" style="margin-top:0pt;margin-bottom:0pt">Supports generation of pseudo-random values—typically, random numbers. The sequence of numbers generated is determined by a seed value, which may be passed to a constructor or set via a call to <span style="font-family:Courier New">setSeed()</span>.</p>
+			<p lang="en-US" data-tag="idea" style="margin-top:0pt;margin-bottom:0pt">Two <span style="font-family:Courier New">Random </span>objects starting from the same seed will return the same sequence of values to identical calls.</p>
+		</div>
+	</body>
+</html>
