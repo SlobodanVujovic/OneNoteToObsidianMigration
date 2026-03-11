@@ -11,10 +11,12 @@ const item = {
 // 2. ul - bullet points
 // 3. ol - numbered points
 // 4. tekst markiran drugom bojom se ne detektuje
+// TODO VIDETI KAKO DA SE SAMO STAVI "KOMANDA" NAD TABELOM I DA SKRIPTA ZNA KAKO DA JE FLAT-UJE
 function main() {
+  // TODO Copy from here
   let html = item.json.data || "";
 
-  extractTitle(html);
+  extractTitle(html, item);
 
   // --- DESTROY THE HEAD SECTION ---
   // This completely deletes <head>, <title>, and <meta> tags so their text doesn't leak into your note
@@ -27,21 +29,22 @@ function main() {
   html = html.replace(/[\r\n]+/g, " ");
 
   html = defineCallouts(html);
-
-  html = processImages(html);
-
+  html = processImages(html, item);
   html = courierFontHandler(html);
-
   html = linksHandler(html);
-
   html = italicFontHandler(html);
-
   html = highlightedTextHandler(html);
 
+  // CLEANUP: Remove ANY remaining <span> tags before processing lists.
+  // This ensures the List Handlers see "1. Text" instead of "1. <span lang...>Text</span>"
+  html = html.replace(/<\/?span[^>]*>/gi, "");
+
+  html = unorderedListHandler(html);
+  html = orderedListHandler(html);
   html = emptyLinesHandler(html);
 
   // Strip all remaining HTML tags (like <span>, <table>, <b>)
-  let cleanText = html.replace(/<[^>]*>?/gm, "");
+  let cleanText = html.replace(/<\/?(?!(mark)\b)[a-z0-9]+[^>]*>/gim, "");
 
   // Decode standard HTML entities so characters render correctly
   cleanText = cleanText
@@ -72,7 +75,7 @@ function main() {
   return item;
 }
 
-function extractTitle(html) {
+function extractTitle(html, item) {
   const titleMatch = html.match(/<title>(.*?)<\/title>/i);
   let noteTitle = titleMatch ? titleMatch[1].trim() : "Untitled Note";
 
@@ -134,7 +137,7 @@ function defineCallouts(html) {
   return html;
 }
 
-function processImages(html) {
+function processImages(html, item) {
   // Extract Images, generate Obsidian links, and save URLs for downloading
   item.json.imagesToDownload = [];
 
@@ -333,6 +336,39 @@ function headersHandler(cleanText) {
     .join("\n");
 
   return cleanText;
+}
+
+function unorderedListHandler(html) {
+  // Target <ul> blocks specifically so we don't accidentally catch <ol> lists
+  html = html.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (match, ulContent) => {
+
+    // Replace opening <li> with a bullet point
+    let listItems = ulContent.replace(/<li[^>]*>/gi, "- ");
+
+    // Replace closing </li> with a single newline to keep the list tight
+    listItems = listItems.replace(/<\/li>/gi, "\n");
+
+    // Wrap the whole list block in newlines so it separates cleanly from other text
+    return `${listItems}`;
+  });
+
+  return html;
+}
+
+function orderedListHandler(html) {
+  // 1. Find the entire <ol> block
+  return html.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (match, olContent) => {
+    let index = 1;
+
+    // 2. Replace each <li> inside THIS specific <ol> with a counter
+    let listItems = olContent.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (liMatch, liContent) => {
+      const line = `${index}. ${liContent.trim()}\n`;
+      index++;
+      return line;
+    });
+
+    return `${listItems}`;
+  });
 }
 
 const result = main();
