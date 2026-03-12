@@ -9,8 +9,7 @@ const item = {
 // TODO
 // 1. Reorder-uj redosled kojim se izvrsavaju stvari u skripti
 // 2. == ne radi ako ima space nakon njega
-// 3. noramlizovati ==== u empty string
-// 3. highlight courier new font-a ==`higlightedCode`==
+// 3. Replace &#39; sa apostrofom
 // TODO VIDETI KAKO DA SE SAMO STAVI "KOMANDA" NAD TABELOM I DA SKRIPTA ZNA KAKO DA JE FLAT-UJE
 function main() {
   // TODO Copy from here
@@ -64,6 +63,8 @@ function main() {
   // If the very first thing in the text is the "# General" header, delete it
   // and any empty lines immediately following it.
   cleanText = cleanText.replace(/^\s*# General\n*/i, "");
+
+  cleanText = normalizeHighlights(cleanText);
 
   // --- SAVE ---
   // Save the final text back to the n8n item
@@ -378,7 +379,7 @@ function fixMarkedCodeHandler(html) {
   return html.replace(
     /<mark style="([^"]+)">`([\s\S]*?)`<\/mark>/gi,
     (match, style, content) => {
-      
+
       // Perform replacements on the inner content
       let updatedContent = content
         .replace(/<-/g, "&lt;&ndash;") // Left arrow
@@ -390,6 +391,12 @@ function fixMarkedCodeHandler(html) {
       return `<mark style="${style}">${updatedContent}</mark>`;
     }
   );
+}
+
+function normalizeHighlights(cleanText) {
+  cleanText = cleanText.replace(/====/g, "");
+
+  return cleanText;
 }
 
 const result = main();
