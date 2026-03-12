@@ -8,9 +8,9 @@ const item = {
 
 // TODO
 // 1. Reorder-uj redosled kojim se izvrsavaju stvari u skripti
-// 2. ul - bullet points
-// 3. ol - numbered points
-// 4. tekst markiran drugom bojom se ne detektuje
+// 2. == ne radi ako ima space nakon njega
+// 3. noramlizovati ==== u empty string
+// 3. highlight courier new font-a ==`higlightedCode`==
 // TODO VIDETI KAKO DA SE SAMO STAVI "KOMANDA" NAD TABELOM I DA SKRIPTA ZNA KAKO DA JE FLAT-UJE
 function main() {
   // TODO Copy from here
@@ -34,6 +34,7 @@ function main() {
   html = linksHandler(html);
   html = italicFontHandler(html);
   html = highlightedTextHandler(html);
+  html = fixMarkedCodeHandler(html);
 
   // CLEANUP: Remove ANY remaining <span> tags before processing lists.
   // This ensures the List Handlers see "1. Text" instead of "1. <span lang...>Text</span>"
@@ -49,9 +50,6 @@ function main() {
   // Decode standard HTML entities so characters render correctly
   cleanText = cleanText
     .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"');
 
   cleanText = whitespaceRemoval(cleanText);
@@ -183,19 +181,23 @@ function processImages(html, item) {
 }
 
 function courierFontHandler(html) {
-  html = html.replace(
-    // This looks for any span where the style contains "font-family:Courier New" (with or without quotes/spaces)
-    /<span[^>]*style="[^"]*font-family:\s*'?Courier New'?[^"]*"[^>]*>([\s\S]*?)<\/span>/gi,
-    (match, text) => {
-      // Clean up any weird invisible line breaks OneNote might have forced inside the span
-      let cleanCode = text.trim().replace(/\n/g, " ");
+  return html.replace(
+    /<span[^>]*style="([^"]*font-family:\s*'?Courier New'?[^"]*)"[^>]*>([\s\S]*?)<\/span>/gi,
+    (match, style, text) => {
+      // Clean the text for markdown backticks
+      const cleanCode = text.trim().replace(/\n/g, " ");
+      const formatted = `\`${cleanCode}\``;
 
-      // Wrap the text in backticks
-      return `\`${cleanCode}\``;
-    },
+      // If this span ALSO has a background color, we keep the span 
+      // but replace the inside with our backticked text.
+      if (style.toLowerCase().includes("background")) {
+        return `<span style="${style}">${formatted}</span>`;
+      }
+
+      // Otherwise, just return the backticked text
+      return formatted;
+    }
   );
-
-  return html;
 }
 
 function linksHandler(html) {
@@ -369,6 +371,25 @@ function orderedListHandler(html) {
 
     return `${listItems}`;
   });
+}
+
+function fixMarkedCodeHandler(html) {
+  // Matches <mark> tag with backticks inside: <mark style="...">`text`</mark>
+  return html.replace(
+    /<mark style="([^"]+)">`([\s\S]*?)`<\/mark>/gi,
+    (match, style, content) => {
+      
+      // Perform replacements on the inner content
+      let updatedContent = content
+        .replace(/<-/g, "&lt;&ndash;") // Left arrow
+        .replace(/\^-/g, "^&ndash;")   // Up arrow
+        .replace(/v-/g, "v&ndash;");   // Down arrow/marker
+
+      // Rebuild the tag WITHOUT the backticks to ensure the 
+      // background color renders correctly across the entities.
+      return `<mark style="${style}">${updatedContent}</mark>`;
+    }
+  );
 }
 
 const result = main();
