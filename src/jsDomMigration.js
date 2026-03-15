@@ -12,6 +12,25 @@ function main() {
   let html = item.json.data || "";
   const dom = new JSDOM(html);
   const document = dom.window.document;
+  const body = document.body;
+
+  extractTitle(document, item);
+
+  orderOutlineContaiers(body)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   let cleanText = "";
   // Start the crawl at the body
@@ -21,6 +40,29 @@ function main() {
 
   item.json.extractedText = cleanText;
 }
+
+function extractTitle(document, item) {
+  item.json.noteTitle = document.title;
+}
+
+function orderOutlineContaiers(body) {
+  const outlineContaiers = Array.from(body.children).filter(
+    el => el.tagName === 'DIV' && el.getAttribute('style')?.includes('position:absolute')
+  );
+
+  const sortedContainers = outlineContaiers.sort((a, b) => getTopValue(a) - getTopValue(b));
+
+  body.innerHTML = "";
+  sortedContainers.forEach(container => {
+    body.appendChild(container);
+  });
+}
+
+function getTopValue(divElement) {
+  const style = divElement.getAttribute('style') || "";
+  const match = style.match(/top:\s?(\d+)px/);
+  return match ? parseInt(match[1], 10) : 0;
+};
 
 // Recursive "Walker"
 function translateNode(node) {
