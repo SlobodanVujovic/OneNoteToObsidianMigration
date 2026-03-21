@@ -24,14 +24,42 @@ const item: Item = {
 type MigrationState = {
   cleanText: string;
   headerLevel: number; // 0 = not a header, 1-6 = h1-h6
-  isHighlighted: boolean; // Tracking ==highlight== state
+
+  isLime: boolean; // Tracking ==lime== state
+  isLimeStart: boolean;
+
+  isHighlighted: boolean; // Tracking <mark style="background: #ff0000;">highlighted</mark> state
+  isHighlightedStart: boolean;
+  highlightedColor: string | null;
+
+  isCodeFont: boolean; // Tracking <mark style="font-family:Courier New">code</mark> state
+  isCodeFontStart: boolean;
+
+  isColoredFont: boolean; // Tracking <mark style="color:white">colored-text</mark> state
+  isColoredFontStart: boolean;
+  coloredFontColor: string | null;
+
   shouldSkip: boolean;
 };
 
 const state: MigrationState = {
   cleanText: "",
   headerLevel: 0,
+
+  isLime: false,
+  isLimeStart: false,
+
   isHighlighted: false,
+  isHighlightedStart: false,
+  highlightedColor: null,
+
+  isCodeFont: false,
+  isCodeFontStart: false,
+
+  isColoredFont: false,
+  isColoredFontStart: false,
+  coloredFontColor: null,
+
   shouldSkip: false,
 };
 
@@ -49,9 +77,6 @@ function main() {
 
   // TODO Fill in. slvu
   item.json.imagesToDownload = [];
-
-  // Clean up double newlines often caused by nested block elements
-  // cleanText = cleanText.replace(/\n{3,}/g, "\n\n").trim();
 
   item.json.extractedText = state.cleanText;
 }
@@ -141,24 +166,35 @@ function isGeneralHeader(header: string): boolean {
 }
 
 function openSpan(spanNode: HTMLSpanElement) {
-  // If this is header, skip style check.
-  if (state.headerLevel > 0) {
-    return;
-  }
+  // Check style if this is not header.
+  if (state.headerLevel == 0) {
+    if (isLime(spanNode) && !state.isLime) {
+      state.cleanText += "==";
 
+      state.isLime = true;
+    }
+  }
+}
+
+function isLime(spanNode: HTMLSpanElement): boolean {
   const style = spanNode.getAttribute("style") || "";
+
   const isLime =
     style.includes("background-color:lime") ||
     style.includes("background-color:#00ff00") ||
     style.includes("background:lime") ||
     style.includes("background:#00ff00");
-  if (isLime && !state.isHighlighted) {
-    state.cleanText += "==";
 
-    state.isHighlighted = true;
-  }
+  return isLime;
 }
 
+// Valid: ==`Void`==
+// Not-valid: `==Void==` => First we need to check Courier New and then style.
+
+// Valid: <mark style="background: #ff0000;">Void</mark>
+// Valid: <mark style="background: #ff0000;font-family:Courier New">struktura</mark> => When we use <mark> for highlighting, we must also use it for font setup if needed
+// Not-valid: <mark style="background: #ff0000;">`Void`</mark>
+// Not-valid: `<mark style="background: #ff0000;">Void</mark>`
 function handleTextNode(textNode: Text) {
   let text = textNode.textContent || "";
 
@@ -197,31 +233,18 @@ function closeElement(element: Element) {
 }
 
 function closeP() {
-  state.cleanText += "\n\n";
+  state.cleanText += "\n";
 }
 
 function closeSpan(element: HTMLSpanElement) {
-  const style = element.getAttribute("style") || "";
-  const isLime =
-    style.includes("background-color:lime") ||
-    style.includes("background-color:#00ff00") ||
-    style.includes("background:lime") ||
-    style.includes("background:#00ff00");
-
   // Close highlight only if the NEXT sibling isn't also a lime span.
   // This is the trick for "merging" ==highlights==.
-  if (isLime && state.isHighlighted) {
+  if (isLime(element) && state.isLime) {
     const nextSibling = element.nextSibling as HTMLElement;
-    const nextSiblingStyle = nextSibling?.getAttribute?.("style") || "";
-    const isNextSiblingLime =
-      nextSiblingStyle.includes("background-color:lime") ||
-      nextSiblingStyle.includes("background-color:#00ff00") ||
-      nextSiblingStyle.includes("background:lime") ||
-      nextSiblingStyle.includes("background:#00ff00");
 
-    if (!isNextSiblingLime) {
+    if (!isLime(nextSibling)) {
       state.cleanText += "==";
-      state.isHighlighted = false;
+      state.isLime = false;
     }
   }
 }
