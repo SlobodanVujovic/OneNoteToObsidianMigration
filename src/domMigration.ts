@@ -21,8 +21,9 @@ const item: Item = {
   },
 };
 
+let cleanText: string = "";
+
 type MigrationState = {
-  cleanText: string;
   headerLevel: number; // 0 = not a header, 1-6 = h1-h6
 
   isLime: boolean; // Tracking ==lime== state
@@ -43,7 +44,6 @@ type MigrationState = {
 };
 
 const state: MigrationState = {
-  cleanText: "",
   headerLevel: 0,
 
   isLime: false,
@@ -63,6 +63,26 @@ const state: MigrationState = {
   shouldSkip: false,
 };
 
+function resetState() {
+  state.headerLevel = 0;
+
+  state.isLime = false;
+  state.isLimeStart = false;
+
+  state.isHighlighted = false;
+  state.isHighlightedStart = false;
+  state.highlightedColor = null;
+
+  state.isCodeFont = false;
+  state.isCodeFontStart = false;
+
+  state.isColoredFont = false;
+  state.isColoredFontStart = false;
+  state.coloredFontColor = null;
+
+  state.shouldSkip = false;
+}
+
 function main() {
   let html = item.json.data || "";
   const dom = new JSDOM(html);
@@ -78,7 +98,7 @@ function main() {
   // TODO Fill in. slvu
   item.json.imagesToDownload = [];
 
-  item.json.extractedText = state.cleanText;
+  item.json.extractedText = cleanText;
 }
 
 function extractTitle(document: Document, item: Item) {
@@ -109,6 +129,10 @@ function getTopValue(divElement: Element) {
   return match ? parseInt(match[1]!, 10) : 0;
 }
 
+// Idea is:
+// 1. set state in opening methods of the pre-visit step,
+// 2. add text with proper semantic (==, ``, <mark>) in handleTextNode() method based on current state,
+// 3. set state in closing methods of the post-visit step and add closing semantic to text if required.
 function walk(node: Node) {
   // Pre-visit
   if (node.nodeType === Node.ELEMENT_NODE) {
@@ -117,14 +141,12 @@ function walk(node: Node) {
     handleTextNode(node as Text);
   }
 
-  if (state.shouldSkip) {
-    return;
+  if (!state.shouldSkip) {
+    // Walk
+    node.childNodes.forEach((child) => {
+      walk(child);
+    });
   }
-
-  // Walk
-  node.childNodes.forEach((child) => {
-    walk(child);
-  });
 
   // Post-visit
   if (node.nodeType === Node.ELEMENT_NODE) {
@@ -150,9 +172,6 @@ function openElement(elementNode: Element) {
 }
 
 function openP(pNode: HTMLParagraphElement) {
-  state.headerLevel = 0;
-  state.shouldSkip = false;
-
   if (isGeneralHeader(pNode.textContent)) {
     state.shouldSkip = true;
     return;
@@ -168,8 +187,12 @@ function isGeneralHeader(header: string): boolean {
 function openSpan(spanNode: HTMLSpanElement) {
   // Check style if this is not header.
   if (state.headerLevel == 0) {
-    if (isLime(spanNode) && !state.isLime) {
-      state.cleanText += "==";
+    if (isLime(spanNode)) {
+      if (!state.isLime) {
+        state.isLimeStart = true;
+      } else {
+        state.isLimeStart = false;
+      }
 
       state.isLime = true;
     }
@@ -209,9 +232,13 @@ function handleTextNode(textNode: Text) {
     const header = headerInstruction[2]!.trim();
 
     state.headerLevel = headerLevel;
-    state.cleanText += "#".repeat(headerLevel) + " " + header;
+    cleanText += "#".repeat(headerLevel) + " " + header;
   } else {
-    state.cleanText += text.replace(/[\r\n\t]+/g, "");
+    if (state.isLimeStart) {
+      cleanText += "==";
+    }
+
+    cleanText += text.replace(/[\r\n\t]+/g, "");
   }
 }
 
@@ -233,18 +260,21 @@ function closeElement(element: Element) {
 }
 
 function closeP() {
-  state.cleanText += "\n";
+  cleanText += "\n";
+
+  resetState();
 }
 
 function closeSpan(element: HTMLSpanElement) {
   // Close highlight only if the NEXT sibling isn't also a lime span.
   // This is the trick for "merging" ==highlights==.
-  if (isLime(element) && state.isLime) {
+  if (state.isLime) {
     const nextSibling = element.nextSibling as HTMLElement;
 
     if (!isLime(nextSibling)) {
-      state.cleanText += "==";
+      cleanText += "==";
       state.isLime = false;
+      state.isLimeStart = false;
     }
   }
 }
