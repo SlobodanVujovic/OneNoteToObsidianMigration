@@ -267,6 +267,12 @@ function handleTextNode(textNode: Text) {
       cleanText += `<mark style="background: ${state.highlightedColor}">`;
     }
 
+    if(state.highlightedColor){
+      text = text.replace(/<-/g, "&larr;");
+      text = text.replace(/\^-/g, "&uarr;");
+      text = text.replace(/v-/g, "&darr;");
+    }
+
     cleanText += text.replace(/[\r\n\t]+/g, "");
   }
 }
