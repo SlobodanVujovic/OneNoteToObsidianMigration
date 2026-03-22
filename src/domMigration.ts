@@ -187,7 +187,8 @@ function isGeneralHeader(header: string): boolean {
 function openSpan(spanNode: HTMLSpanElement) {
   // Check style if this is not header.
   if (state.headerLevel == 0) {
-    if (isLime(spanNode)) {
+    const isHighlightColorLime = isLime(spanNode);
+    if (isHighlightColorLime) {
       if (!state.isLime) {
         state.isLimeStart = true;
       } else {
@@ -195,6 +196,18 @@ function openSpan(spanNode: HTMLSpanElement) {
       }
 
       state.isLime = true;
+    }
+
+    const highlightColor = getHighlightColor(spanNode);
+    if (highlightColor && !isHighlightColorLime) {
+      if (!state.isHighlighted || state.highlightedColor !== highlightColor) {
+        state.isHighlightedStart = true;
+      } else {
+        state.isHighlightedStart = false;
+      }
+
+      state.isHighlighted = true;
+      state.highlightedColor = highlightColor;
     }
   }
 }
@@ -209,6 +222,18 @@ function isLime(spanNode: HTMLSpanElement): boolean {
     style.includes("background:#00ff00");
 
   return isLime;
+}
+
+function getHighlightColor(spanNode: HTMLSpanElement): string | null {
+  const style = spanNode.getAttribute("style") || "";
+
+  const match = style.match(/background-color\s*:\s*([^;]+)/i);
+
+  if (match) {
+    return match[1]!.trim(); // Returns the actual color value (e.g., "red", "#ff0000", "rgb(255,0,0)")
+  }
+
+  return null;
 }
 
 // Valid: ==`Void`==
@@ -236,6 +261,10 @@ function handleTextNode(textNode: Text) {
   } else {
     if (state.isLimeStart) {
       cleanText += "==";
+    }
+
+    if (state.isHighlightedStart) {
+      cleanText += `<mark style="background: ${state.highlightedColor}">`;
     }
 
     cleanText += text.replace(/[\r\n\t]+/g, "");
@@ -271,10 +300,33 @@ function closeSpan(element: HTMLSpanElement) {
   if (state.isLime) {
     const nextSibling = element.nextSibling as HTMLElement;
 
-    if (!isLime(nextSibling)) {
+    if (!nextSibling || !isLime(nextSibling)) {
       cleanText += "==";
       state.isLime = false;
       state.isLimeStart = false;
+    }
+  }
+
+  if (state.isHighlighted) {
+    const nextSibling = element.nextSibling as HTMLElement;
+
+    if (!nextSibling) {
+      cleanText += "</mark>";
+      state.isHighlighted = false;
+      state.isHighlightedStart = false;
+      state.highlightedColor = null;
+    } else {
+      const nextSpanHighlightedColor = getHighlightColor(nextSibling);
+      if (
+        !nextSpanHighlightedColor ||
+        (nextSpanHighlightedColor &&
+          nextSpanHighlightedColor !== state.highlightedColor)
+      ) {
+        cleanText += "</mark>";
+        state.isHighlighted = false;
+        state.isHighlightedStart = false;
+        state.highlightedColor = null;
+      }
     }
   }
 }
